@@ -11,6 +11,33 @@
                 <div class="p-6 text-gray-900">
                     <h3 class="text-lg font-bold mb-4">Selamat Datang, {{ Auth::user()->name }}!</h3>
 
+{{-- BAGIAN WIDGET STATISTIK --}}
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                    <!-- Kotak Total -->
+                    <div class="bg-blue-50 p-4 rounded-lg shadow-sm border border-blue-200">
+                        <h5 class="text-blue-800 font-bold text-sm uppercase">Total Tiket</h5>
+                        <p class="text-3xl font-extrabold text-blue-900 mt-2">{{ $totalTickets }}</p>
+                    </div>
+
+                    <!-- Kotak Sedang Dikerjakan -->
+                    <div class="bg-yellow-50 p-4 rounded-lg shadow-sm border border-yellow-200">
+                        <h5 class="text-yellow-800 font-bold text-sm uppercase">Dikerjakan</h5>
+                        <p class="text-3xl font-extrabold text-yellow-900 mt-2">{{ $progressTickets }}</p>
+                    </div>
+
+                    <!-- Kotak Selesai (Resolved) -->
+                    <div class="bg-green-50 p-4 rounded-lg shadow-sm border border-green-200">
+                        <h5 class="text-green-800 font-bold text-sm uppercase">Selesai Menunggu Cek</h5>
+                        <p class="text-3xl font-extrabold text-green-900 mt-2">{{ $resolvedTickets }}</p>
+                    </div>
+
+                    <!-- Kotak Ditutup (Closed) -->
+                    <div class="bg-purple-50 p-4 rounded-lg shadow-sm border border-purple-200">
+                        <h5 class="text-purple-800 font-bold text-sm uppercase">Tiket Ditutup</h5>
+                        <p class="text-3xl font-extrabold text-purple-900 mt-2">{{ $closedTickets }}</p>
+                    </div>
+                </div>
+
                     {{-- BAGIAN TABEL DAFTAR TIKET --}}
                     <div class="mt-8">
                         <h4 class="text-lg font-bold mb-4">Daftar Tiket Kerusakan</h4>
@@ -77,6 +104,12 @@
                                     @endforelse
                                 </tbody>
                             </table>
+                            </table>
+
+            <!-- FITUR PAGINASI (TOMBOL NEXT / PREV) -->
+            <div class="mt-4 p-4 border-t border-gray-200">
+                {{ $tickets->links() }}
+            </div>
                         </div>
                     </div>
 
