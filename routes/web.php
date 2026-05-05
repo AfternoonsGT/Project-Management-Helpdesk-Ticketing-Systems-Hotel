@@ -2,39 +2,45 @@
 
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
-use App\HTTP\Controllers\TicketController;
+use App\Http\Controllers\TicketController; // <-- Perbaikan kecil: tulisan Http lebih baik huruf kecil 'ttp'-nya
 
 Route::get('/', function () {
     return view('welcome');
 });
 
-// Route::get('/dashboard', function () {
-//     return view('dashboard');
-// })->middleware(['auth', 'verified'])->name('dashboard');
-
+// Rute Dashboard
 Route::get('/dashboard', [TicketController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
+// Rute Profile (Bawaan Breeze)
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-// Rute yang harus login dulu baru bisa diakses
+// ==========================================
+// RUTE MANAJEMEN TIKET
+// Semuanya dibungkus dalam 1 middleware auth
+// ==========================================
 Route::middleware('auth')->group(function () {
+
+    // 1. RUTE STATIS (Wajib ditaruh di paling atas!)
+    Route::get('/tickets/export', [TicketController::class, 'export'])->name('tickets.export');
     Route::get('/tickets/create', [TicketController::class, 'create'])->name('tickets.create');
-    // 👇 TAMBAHKAN BARIS INI 👇
     Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
-    // Rute untuk melihat detail tiket
+
+    // 2. RUTE DINAMIS (Yang memiliki parameter {ticket} di URL-nya)
     Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
-    // Rute khusus Admin untuk menugaskan teknisi
+    Route::get('/tickets/{ticket}/edit', [TicketController::class, 'edit'])->name('tickets.edit');
+    Route::put('/tickets/{ticket}', [TicketController::class, 'update'])->name('tickets.update');
+    Route::delete('/tickets/{ticket}', [TicketController::class, 'destroy'])->name('tickets.destroy');
+
+    // 3. RUTE AKSI SPESIFIK (Tombol-tombol proses)
     Route::post('/tickets/{ticket}/assign', [TicketController::class, 'assign'])->name('tickets.assign');
-    // Rute khusus Teknisi untuk update status pengerjaan
     Route::post('/tickets/{ticket}/update-status', [TicketController::class, 'updateStatus'])->name('tickets.updateStatus');
-    // Rute khusus Admin untuk menutup tiket
     Route::post('/tickets/{ticket}/close', [TicketController::class, 'close'])->name('tickets.close');
-    // Rute khusus Admin untuk menolak perbaikan dan mengembalikan ke Teknisi
     Route::post('/tickets/{ticket}/reject', [TicketController::class, 'reject'])->name('tickets.reject');
+
 });
 
 require __DIR__.'/auth.php';

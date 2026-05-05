@@ -12,43 +12,75 @@ use App\Models\User;
 
 class TicketController extends Controller
 {
-    // Fungsi untuk menampilkan halaman utama / dashboard
-    public function index()
+    public function index(\Illuminate\Http\Request $request)
     {
         $role = Auth::user()->role;
 
-        // Logika untuk mengambil data tiket dan statistik berdasarkan peran
-        if ($role == 'admin') {
-            // Data Tabel (Dibatasi 5 per halaman)
-            $tickets = Ticket::latest()->paginate(5);
+        // ==========================================
+        // 1. SIAPKAN MESIN PENCARI (QUERY BUILDER)
+        // ==========================================
+        $query = \App\Models\Ticket::query();
 
-            // Data Widget Statistik (Menghitung seluruh data)
-            $totalTickets = Ticket::count();
-            $progressTickets = Ticket::whereIn('status', ['assigned', 'on_progress'])->count();
-            $resolvedTickets = Ticket::where('status', 'resolved')->count();
-            $closedTickets = Ticket::where('status', 'closed')->count();
-
-        } elseif ($role == 'technician') {
-            $tickets = Ticket::where('technician_id', Auth::id())->latest()->paginate(5);
-
-            $totalTickets = Ticket::where('technician_id', Auth::id())->count();
-            $progressTickets = Ticket::where('technician_id', Auth::id())->whereIn('status', ['assigned', 'on_progress'])->count();
-            $resolvedTickets = Ticket::where('technician_id', Auth::id())->where('status', 'resolved')->count();
-            $closedTickets = Ticket::where('technician_id', Auth::id())->where('status', 'closed')->count();
-
-        } else {
-            // Untuk Staff
-            $tickets = Ticket::where('reporter_id', Auth::id())->latest()->paginate(5);
-
-            $totalTickets = Ticket::where('reporter_id', Auth::id())->count();
-            $progressTickets = Ticket::where('reporter_id', Auth::id())->whereIn('status', ['assigned', 'on_progress'])->count();
-            $resolvedTickets = Ticket::where('reporter_id', Auth::id())->where('status', 'resolved')->count();
-            $closedTickets = Ticket::where('reporter_id', Auth::id())->where('status', 'closed')->count();
+        // Filter awal: Admin bebas, Teknisi dan Staff hanya lihat miliknya
+        if ($role == 'technician') {
+            $query->where('technician_id', Auth::id());
+        } elseif ($role == 'staff') {
+            $query->where('reporter_id', Auth::id());
         }
 
-        // Kirim semua data ke view
-        return view('dashboard', compact('tickets', 'totalTickets', 'progressTickets', 'resolvedTickets', 'closedTickets'));
+        // ==========================================
+        // 2. TERAPKAN FILTER DARI DROPDOWN & SEARCH
+        // ==========================================
+        // Jika ada pencarian teks (filled = tidak kosong)
+        if ($request->filled('search')) {
+            $query->where(function($q) use ($request) {
+                $q->where('title', 'like', '%' . $request->search . '%')
+                  ->orWhere('ticket_number', 'like', '%' . $request->search . '%')
+                  ->orWhere('location', 'like', '%' . $request->search . '%');
+            });
+        }
 
+        // Jika filter Bulan dipilih
+        if ($request->filled('month')) {
+            $query->whereMonth('created_at', $request->month);
+        }
+
+        // Jika filter Status dipilih
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // ==========================================
+        // 3. EKSEKUSI DATA TABEL (PENTING!)
+        // ==========================================
+        // Di sinilah data diambil. Jangan ada kodingan $tickets = ... lagi setelah baris ini!
+        $tickets = $query->latest()->paginate(5)->withQueryString();
+
+
+        // ==========================================
+        // 4. HITUNG WIDGET STATISTIK KOTAK DI ATAS
+        // ==========================================
+        // Hitungan ini dibiarkan menghitung SEMUA data agar angka di kotak atas tidak ikut berubah/hilang saat kita mencari data di tabel.
+        if ($role == 'admin') {
+            $totalTickets = \App\Models\Ticket::count();
+            $progressTickets = \App\Models\Ticket::whereIn('status', ['assigned', 'on_progress'])->count();
+            $resolvedTickets = \App\Models\Ticket::where('status', 'resolved')->count();
+            $closedTickets = \App\Models\Ticket::where('status', 'closed')->count();
+
+        } elseif ($role == 'technician') {
+            $totalTickets = \App\Models\Ticket::where('technician_id', Auth::id())->count();
+            $progressTickets = \App\Models\Ticket::where('technician_id', Auth::id())->whereIn('status', ['assigned', 'on_progress'])->count();
+            $resolvedTickets = \App\Models\Ticket::where('technician_id', Auth::id())->where('status', 'resolved')->count();
+            $closedTickets = \App\Models\Ticket::where('technician_id', Auth::id())->where('status', 'closed')->count();
+
+        } else {
+            $totalTickets = \App\Models\Ticket::where('reporter_id', Auth::id())->count();
+            $progressTickets = \App\Models\Ticket::where('reporter_id', Auth::id())->whereIn('status', ['assigned', 'on_progress'])->count();
+            $resolvedTickets = \App\Models\Ticket::where('reporter_id', Auth::id())->where('status', 'resolved')->count();
+            $closedTickets = \App\Models\Ticket::where('reporter_id', Auth::id())->where('status', 'closed')->count();
+        }
+
+        return view('dashboard', compact('tickets', 'totalTickets', 'progressTickets', 'resolvedTickets', 'closedTickets'));
     }
     // // Fungsi untuk menampilkan halaman utama / dashboard
     // public function index()
@@ -261,5 +293,107 @@ class TicketController extends Controller
         ]);
 
         return back()->with('success', 'Tiket dikembalikan ke Teknisi untuk diperbaiki ulang!');
+    }
+    // ==========================================
+    // FITUR KHUSUS ADMIN: EDIT & DELETE
+    // ==========================================
+
+    // 1. Menampilkan halaman form edit
+    public function edit(Ticket $ticket)
+    {
+        abort_if(Auth::user()->role !== 'admin', 403, 'Akses Ditolak: Hanya Admin yang boleh mengedit tiket!');
+        return view('tickets.edit', compact('ticket'));
+    }
+
+    // 2. Memproses data yang diubah
+    public function update(Request $request, Ticket $ticket)
+    {
+        abort_if(Auth::user()->role !== 'admin', 403, 'Akses Ditolak: Hanya Admin yang boleh mengedit tiket!');
+
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'location' => 'required|string|max:255',
+            'description' => 'required|string',
+        ]);
+
+        $ticket->update([
+            'title' => $request->title,
+            'location' => $request->location,
+            'description' => $request->description,
+        ]);
+
+        return redirect()->route('tickets.show', $ticket->id)->with('success', 'Detail laporan tiket berhasil diperbarui!');
+    }
+
+    // 3. Menghapus tiket secara permanen
+    public function destroy(Ticket $ticket)
+    {
+        abort_if(Auth::user()->role !== 'admin', 403, 'Akses Ditolak: Hanya Admin yang boleh menghapus tiket!');
+
+        // Hapus foto dari penyimpanan folder (agar memori server hotel tidak penuh)
+        if ($ticket->image_before) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($ticket->image_before);
+        }
+        if ($ticket->image_after) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($ticket->image_after);
+        }
+
+        // Hapus data tiket beserta riwayatnya (otomatis terhapus jika di migration pakai onDelete cascade, tapi kita hapus manual untuk aman)
+        \App\Models\TicketHistory::where('ticket_id', $ticket->id)->delete();
+        $ticket->delete();
+
+        return redirect()->route('dashboard')->with('success', 'Tiket dan fotonya berhasil dihapus secara permanen!');
+    }
+    // ==========================================
+    // FITUR EXPORT PDF & EXCEL
+    // ==========================================
+    public function export(\Illuminate\Http\Request $request)
+    {
+        $role = \Illuminate\Support\Facades\Auth::user()->role;
+        $query = \App\Models\Ticket::query();
+
+        // Sama seperti index, sesuaikan role
+        if ($role == 'technician') {
+            $query->where('technician_id', \Illuminate\Support\Facades\Auth::id());
+        } elseif ($role == 'staff') {
+            $query->where('reporter_id', \Illuminate\Support\Facades\Auth::id());
+        }
+
+        // Terapkan filter yang sama jika ada
+        if ($request->filled('search')) {
+            $query->where(function($q) use ($request) {
+                $q->where('title', 'like', '%' . $request->search . '%')
+                  ->orWhere('ticket_number', 'like', '%' . $request->search . '%')
+                  ->orWhere('location', 'like', '%' . $request->search . '%');
+            });
+        }
+        if ($request->filled('month')) {
+            $query->whereMonth('created_at', $request->month);
+        }
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Ambil SEMUA datanya (pakai get(), BUKAN paginate() agar tidak terpotong per 5 baris)
+        $tickets = $query->latest()->get();
+
+        // Jika tombol cetak ditekan adalah PDF
+        if ($request->type == 'pdf') {
+            // Tiga baris ini adalah "Suntikan Tenaga" agar server tidak pingsan
+            ini_set('max_execution_time', 300);
+            ini_set('memory_limit', '512M');
+            libxml_use_internal_errors(true);
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('tickets.export', compact('tickets'));
+            // Set ukuran kertas A4 mendatar (Landscape)
+            $pdf->setPaper('A4', 'landscape');
+            return $pdf->download('Laporan_Tiket_Hotel.pdf');
+        }
+
+        // Jika tombol cetak ditekan adalah Excel
+        if ($request->type == 'excel') {
+            return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\TicketsExport($tickets), 'Laporan_Tiket_Hotel.xlsx');
+        }
+
+        return back();
     }
 }

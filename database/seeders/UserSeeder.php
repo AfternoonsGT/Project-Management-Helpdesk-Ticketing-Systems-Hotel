@@ -24,6 +24,7 @@ class UserSeeder extends Seeder
             'email' => 'teknisi@hotel.com',
             'password' => Hash::make('password123'),
             'role' => 'technician',
+            'phone' => '0681270180203', // Contoh nomor telepon
         ]);
 
         // 3. Akun Staff (Pelapor)
@@ -32,6 +33,7 @@ class UserSeeder extends Seeder
             'email' => 'staff@hotel.com',
             'password' => Hash::make('password123'),
             'role' => 'staff',
+            'phone' => '0681270180203', // Contoh nomor telepon
         ]);
     }
 }
