@@ -23,6 +23,17 @@
                         </select>
                     </div>
 
+                    <!-- 👇 INI ADALAH TAMBAHAN UNTUK JENIS LAYANAN 👇 -->
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-bold mb-2">Jenis Layanan</label>
+                        <select name="service_type" class="w-full border-gray-300 rounded-md shadow-sm" required>
+                            <option value="" disabled selected>-- Pilih Jenis Pekerjaan --</option>
+                            <option value="perbaikan">🚨 Perbaikan Kerusakan (Corrective)</option>
+                            <option value="rutin">🔧 Servis Rutin / Perawatan (Preventive)</option>
+                        </select>
+                    </div>
+                    <!-- 👆 AKHIR TAMBAHAN JENIS LAYANAN 👆 -->
+
                     <!-- Lokasi -->
                     <div class="mb-4">
                         <label class="block text-gray-700 font-bold mb-2">Lokasi (Misal: Kamar 302)</label>

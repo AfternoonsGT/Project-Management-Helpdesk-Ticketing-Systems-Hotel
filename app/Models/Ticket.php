@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Ticket extends Model
 {
 protected $fillable = [
-        'ticket_number', 'reporter_id', 'technician_id', 'category_id',
+        'ticket_number', 'reporter_id', 'technician_id', 'category_id','service_type',
         'location', 'title', 'description', 'image_before', 'image_after',
         'priority', 'status'
     ];
@@ -22,6 +22,12 @@ protected $fillable = [
     public function technician()
     {
         return $this->belongsTo(User::class, 'technician_id');
+    }
+
+    // Jembatan ke tabel Categories
+    public function category()
+    {
+        return $this->belongsTo(Category::class, 'category_id');
     }
 }
 
