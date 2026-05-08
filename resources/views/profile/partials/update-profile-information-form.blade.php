@@ -47,6 +47,14 @@
             @endif
         </div>
 
+        <div>
+            <x-input-label for="phone" :value="__('Nomor WhatsApp (Awali dengan 62)')" />
+            <x-text-input id="phone" name="phone" type="text" class="mt-1 block w-full" :value="old('phone', $user->phone)" placeholder="Contoh: 628123456789" />
+            <x-input-error class="mt-2" :messages="$errors->get('phone')" />
+            <p class="text-xs text-gray-500 mt-1 italic">Penting: Gunakan format angka saja tanpa spasi/strip (+62 / 08 diganti jadi 62).</p>
+        </div>
+        ```
+
         <div class="flex items-center gap-4">
             <x-primary-button>{{ __('Save') }}</x-primary-button>
 

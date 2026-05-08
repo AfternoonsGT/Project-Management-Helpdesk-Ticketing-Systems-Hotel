@@ -24,6 +24,7 @@ class ProfileUpdateRequest extends FormRequest
                 'lowercase',
                 'email',
                 'max:255',
+                'phone' => ['nullable', 'string', 'max:20'], // 👇 CUMA TAMBAH BARIS INI
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
         ];

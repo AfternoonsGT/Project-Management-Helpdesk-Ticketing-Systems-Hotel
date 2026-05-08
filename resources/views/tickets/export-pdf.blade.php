@@ -119,7 +119,11 @@
                             @endif
                         </td>
 
-                        <td>{{ $ticket->location }}</td>
+                        <!-- 👇 GABUNGAN LANTAI DAN LOKASI UNTUK PDF 👇 -->
+                        <td>
+                            <b>{{ $ticket->floor }}</b><br>
+                            {{ $ticket->location }}
+                        </td>
                         <td>{{ strtoupper($ticket->status) }}</td>
                         <td>{{ $ticket->reporter ? $ticket->reporter->name : '-' }}</td>
                         <td>{{ $ticket->technician ? $ticket->technician->name : 'Belum Ditugaskan' }}</td>

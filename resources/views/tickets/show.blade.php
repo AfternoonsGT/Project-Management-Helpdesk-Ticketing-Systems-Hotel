@@ -1,194 +1,207 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Detail Tiket: ') }} {{ $ticket->ticket_number }}
-        </h2>
+        <div class="flex justify-between items-center">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                {{ __('Detail Laporan: ') }} <span class="text-blue-600">{{ $ticket->ticket_number }}</span>
+            </h2>
+            <a href="{{ route('dashboard') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg text-sm transition duration-150 flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                Kembali
+            </a>
+        </div>
     </x-slot>
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
 
-                <!-- 1. INFO DETAIL KERUSAKAN -->
-                <h3 class="text-2xl font-bold mb-2">{{ $ticket->title }}</h3>
-                <p class="text-gray-600 mb-4">Lokasi: <b>{{ $ticket->location }}</b> | Status: <span class="bg-gray-200 px-2 py-1 rounded text-sm font-bold uppercase">{{ $ticket->status }}</span></p>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-                <div class="bg-gray-50 p-4 rounded border mb-6">
-                    <p class="font-semibold mb-2">Deskripsi Kerusakan:</p>
-                    <p>{{ $ticket->description }}</p>
-                </div>
+                <div class="lg:col-span-2 space-y-6">
 
-                <!-- PANEL KONTAK (WHATSAPP) -->
-                <div class="bg-blue-50 p-4 rounded border border-blue-200 mb-6 flex flex-col md:flex-row gap-8">
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-xl border border-gray-100 p-6">
+                        <div class="flex justify-between items-start border-b pb-4 mb-4">
+                            <div>
+                                <h3 class="text-2xl font-bold text-gray-800">{{ $ticket->title }}</h3>
+                                <p class="text-sm text-gray-500 mt-1">Dilaporkan pada: {{ $ticket->created_at->format('d M Y - H:i') }}</p>
+                            </div>
+                            <div>
+                                @php
+                                    $statusColors = [
+                                        'open' => 'bg-blue-100 text-blue-800 border-blue-200',
+                                        'assigned' => 'bg-purple-100 text-purple-800 border-purple-200',
+                                        'on_progress' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
+                                        'resolved' => 'bg-green-100 text-green-800 border-green-200',
+                                        'closed' => 'bg-gray-200 text-gray-800 border-gray-300',
+                                    ];
+                                    $statusLabels = [
+                                        'open' => 'OPEN',
+                                        'assigned' => 'DITUGASKAN',
+                                        'on_progress' => 'DIPROSES',
+                                        'resolved' => 'SELESAI (RESOLVED)',
+                                        'closed' => 'DITUTUP',
+                                    ];
+                                @endphp
+                                <span class="px-4 py-1.5 rounded-full text-xs font-bold border {{ $statusColors[$ticket->status] ?? 'bg-gray-100 text-gray-800' }}">
+                                    {{ $statusLabels[$ticket->status] ?? strtoupper($ticket->status) }}
+                                </span>
+                            </div>
+                        </div>
 
-                    <!-- Info Pelapor (Staff) -->
-                    <div>
-                        <p class="text-sm text-gray-500">Dilaporkan oleh Staff:</p>
-                        <p class="font-bold text-gray-800 text-lg">{{ $ticket->reporter->name }}</p>
-                        @if($ticket->reporter->phone)
-                            <a href="https://wa.me/{{ $ticket->reporter->phone }}" target="_blank" class="inline-flex items-center mt-2 bg-green-500 text-white text-xs font-bold px-3 py-1.5 rounded hover:bg-green-600">
-                                <!-- Icon WA -->
-                                <svg class="w-4 h-4 mr-1 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.347-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.876 1.213 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
-                                Chat WA Staff
-                            </a>
-                        @else
-                            <p class="text-xs text-red-500 italic mt-1">Nomor HP belum diatur</p>
-                        @endif
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div class="bg-gray-50 p-3 rounded-lg border">
+                                <span class="block text-gray-500 text-xs font-bold uppercase mb-1">Pelapor</span>
+                             <span class="font-semibold text-gray-800">{{ $ticket->reporter?->name ?? 'Karyawan Dihapus' }}</span>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg border">
+                                <span class="block text-gray-500 text-xs font-bold uppercase mb-1">Kategori</span>
+                                <span class="font-semibold text-gray-800">{{ $ticket->category ? $ticket->category->name : '-' }}</span>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg border">
+                                <span class="block text-gray-500 text-xs font-bold uppercase mb-1">Lokasi</span>
+                                <span class="font-semibold text-gray-800">{{ $ticket->floor }} - {{ $ticket->location }}</span>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg border">
+                                <span class="block text-gray-500 text-xs font-bold uppercase mb-1">Prioritas</span>
+                                <span class="font-semibold {{ $ticket->priority == 'tinggi' ? 'text-red-600' : ($ticket->priority == 'sedang' ? 'text-yellow-600' : 'text-green-600') }}">
+                                    {{ strtoupper($ticket->priority) }}
+                                </span>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Info Teknisi -->
-                    <div>
-                        <p class="text-sm text-gray-500">Dikerjakan oleh Teknisi:</p>
-                        <p class="font-bold text-gray-800 text-lg">{{ $ticket->technician ? $ticket->technician->name : 'Belum Ditugaskan' }}</p>
-                        @if($ticket->technician && $ticket->technician->phone)
-                            <a href="https://wa.me/{{ $ticket->technician->phone }}" target="_blank" class="inline-flex items-center mt-2 bg-green-500 text-white text-xs font-bold px-3 py-1.5 rounded hover:bg-green-600">
-                                <!-- Icon WA -->
-                                <svg class="w-4 h-4 mr-1 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.347-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.876 1.213 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
-                                Chat WA Teknisi
-                            </a>
-                        @elseif($ticket->technician)
-                            <p class="text-xs text-red-500 italic mt-1">Nomor HP belum diatur</p>
-                        @endif
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-xl border border-gray-100 p-6">
+                        <h4 class="text-sm font-bold text-gray-800 uppercase mb-3 flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path></svg>
+                            Deskripsi Lengkap
+                        </h4>
+                        <p class="text-gray-700 whitespace-pre-line leading-relaxed bg-gray-50 p-4 rounded-lg border">{{ $ticket->description }}</p>
                     </div>
-                </div>
 
-                <!-- 2. FOTO SEBELUM & SESUDAH DIPERBAIKI -->
-                <div class="flex flex-wrap gap-8 mb-6">
-                    @if($ticket->image_before)
-                        <div>
-                            <p class="font-semibold mb-2 text-red-600">Sebelum Diperbaiki:</p>
-                            <img src="{{ asset('storage/' . $ticket->image_before) }}" alt="Foto Kerusakan" class="w-64 h-48 object-cover rounded shadow border border-red-200">
-                        </div>
-                    @endif
-
-                    @if($ticket->image_after)
-                        <div>
-                            <p class="font-semibold mb-2 text-green-600">Sesudah Diperbaiki:</p>
-                            <img src="{{ asset('storage/' . $ticket->image_after) }}" alt="Foto Selesai" class="w-64 h-48 object-cover rounded shadow border border-green-200">
-                        </div>
-                    @endif
-                </div>
-
-                <hr class="my-6">
-
-                <!-- 3. BAGIAN RIWAYAT & CATATAN -->
-                <div class="mb-8">
-                    <h4 class="font-bold text-lg mb-4 text-gray-800">Riwayat & Catatan Pengerjaan</h4>
-                    <div class="space-y-3">
-                        @foreach($histories as $history)
-                            <div class="bg-gray-50 border border-gray-200 rounded p-4 text-sm">
-                                <div class="flex justify-between items-center mb-2">
-                                    <span class="font-bold text-gray-700 uppercase bg-gray-200 px-2 py-1 rounded text-xs">
-                                        Status: {{ $history->status }}
-                                    </span>
-                                    <span class="text-gray-500 text-xs">
-                                        {{ $history->created_at->format('d M Y - H:i') }}
-                                    </span>
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-xl border border-gray-100 p-6">
+                        <h4 class="text-sm font-bold text-gray-800 uppercase mb-4 flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            Lampiran Foto
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <span class="block text-center text-xs font-bold text-red-500 bg-red-50 py-1 rounded-t-lg border-t border-l border-r">SEBELUM PERBAIKAN</span>
+                                <div class="border rounded-b-lg p-2 bg-gray-50 flex justify-center items-center h-48">
+                                    @if($ticket->image_before)
+                                        <img src="{{ asset('storage/' . $ticket->image_before) }}" class="max-h-full rounded shadow-sm object-contain">
+                                    @else
+                                        <span class="text-gray-400 italic text-sm">Tidak ada foto terlampir</span>
+                                    @endif
                                 </div>
+                            </div>
+                            <div>
+                                <span class="block text-center text-xs font-bold text-green-500 bg-green-50 py-1 rounded-t-lg border-t border-l border-r">SESUDAH PERBAIKAN</span>
+                                <div class="border rounded-b-lg p-2 bg-gray-50 flex justify-center items-center h-48">
+                                    @if($ticket->image_after)
+                                        <img src="{{ asset('storage/' . $ticket->image_after) }}" class="max-h-full rounded shadow-sm object-contain">
+                                    @else
+                                        <span class="text-gray-400 italic text-sm">Belum ada foto perbaikan</span>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-                                @if($history->note)
-                                    <p class="text-gray-800 mt-2">
-                                        <span class="font-semibold text-gray-600">Catatan:</span> <br>
-                                        {{ $history->note }}
-                                    </p>
-                                @else
-                                    <p class="text-gray-400 mt-2 italic">Tidak ada catatan.</p>
+                </div>
+
+                <div class="lg:col-span-1 space-y-6">
+
+                    @if($ticket->status != 'closed')
+                        <div class="bg-white overflow-hidden shadow-lg sm:rounded-xl border border-blue-200">
+                            <div class="bg-blue-50 p-4 border-b border-blue-100">
+                                <h4 class="font-bold text-blue-800 flex items-center">
+                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                    Panel Tindakan
+                                </h4>
+                            </div>
+                            <div class="p-4 space-y-4">
+
+                                @if(Auth::user()->role == 'admin' && $ticket->status == 'open')
+                                    <form action="{{ route('tickets.assign', $ticket->id) }}" method="POST">
+                                        @csrf
+                                        <label class="block text-xs font-bold text-gray-700 mb-1">Tugaskan Kepada:</label>
+                                        <select name="technician_id" class="w-full text-sm border-gray-300 rounded-lg shadow-sm mb-3" required>
+                                            <option value="">-- Pilih Teknisi --</option>
+                                            @foreach($technicians as $tech)
+                                                <option value="{{ $tech->id }}">{{ $tech->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-200">
+                                            Kirim Penugasan
+                                        </button>
+                                    </form>
                                 @endif
+
+                                @if(Auth::user()->role == 'technician' && Auth::id() == $ticket->technician_id && in_array($ticket->status, ['assigned', 'on_progress']))
+                                    <form action="{{ route('tickets.updateStatus', $ticket->id) }}" method="POST" enctype="multipart/form-data">
+                                        @csrf
+                                        <label class="block text-xs font-bold text-gray-700 mb-1">Update Status Pengerjaan:</label>
+                                        <select name="status" class="w-full text-sm border-gray-300 rounded-lg shadow-sm mb-3" required>
+                                            <option value="on_progress" {{ $ticket->status == 'on_progress' ? 'selected' : '' }}>Sedang Dikerjakan</option>
+                                            <option value="resolved">Selesai (Resolved)</option>
+                                        </select>
+                                        <textarea name="note" rows="2" class="w-full text-sm border-gray-300 rounded-lg shadow-sm mb-3" placeholder="Catatan perbaikan..."></textarea>
+                                        <label class="block text-xs font-bold text-gray-700 mb-1">Bukti Foto Selesai (Jika Selesai):</label>
+                                        <input type="file" name="image_after" accept="image/*" class="w-full text-xs text-gray-600 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-blue-50 file:text-blue-700 mb-3 border rounded-lg">
+                                        <button type="submit" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-200">
+                                            Update Laporan
+                                        </button>
+                                    </form>
+                                @endif
+
+                                @if(Auth::user()->role == 'admin' && $ticket->status == 'resolved')
+                                    <p class="text-xs text-gray-600 mb-3">Teknisi telah menyelesaikan pekerjaan. Silakan lakukan verifikasi.</p>
+                                    <div class="flex gap-2">
+                                        <form action="{{ route('tickets.close', $ticket->id) }}" method="POST" class="w-1/2">
+                                            @csrf
+                                            <button type="submit" onclick="return confirm('Tutup tiket ini secara permanen?')" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-2 rounded-lg shadow transition text-xs text-center">
+                                                ✅ ACC & Tutup
+                                            </button>
+                                        </form>
+                                        <form action="{{ route('tickets.reject', $ticket->id) }}" method="POST" class="w-1/2">
+                                            @csrf
+                                            <input type="hidden" name="note" value="Ditolak oleh Admin, hasil belum sesuai standar.">
+                                            <button type="submit" onclick="return confirm('Tolak pekerjaan ini dan kembalikan ke teknisi?')" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-2 rounded-lg shadow transition text-xs text-center">
+                                                ❌ Tolak (Revisi)
+                                            </button>
+                                        </form>
+                                    </div>
+                                @endif
+
                             </div>
-                        @endforeach
-                    </div>
-                </div>
-
-                <!-- 4. PANEL KHUSUS ADMIN UNTUK MENUGASKAN TEKNISI -->
-                @if(Auth::user()->role == 'admin' && $ticket->status == 'open')
-                    <div class="bg-blue-50 border border-blue-200 p-4 rounded mb-6">
-                        <h4 class="font-bold text-blue-800 mb-2">Tugaskan Teknisi</h4>
-                        <form action="{{ route('tickets.assign', $ticket->id) }}" method="POST" class="flex gap-4 items-center">
-                            @csrf
-                            <select name="technician_id" class="border-gray-300 rounded shadow-sm w-1/3" required>
-                                <option value="">-- Pilih Teknisi --</option>
-                                @foreach($technicians as $tech)
-                                    <option value="{{ $tech->id }}">{{ $tech->name }}</option>
-                                @endforeach
-                            </select>
-                            <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700">
-                                Berikan Tugas
-                            </button>
-                        </form>
-                    </div>
-                @endif
-
-                <!-- 5. PANEL KHUSUS TEKNISI UNTUK UPDATE STATUS -->
-                @if(Auth::user()->role == 'technician' && Auth::id() == $ticket->technician_id)
-                    @if($ticket->status == 'assigned' || $ticket->status == 'on_progress')
-                        <div class="bg-green-50 border border-green-200 p-4 rounded mb-6">
-                            <h4 class="font-bold text-green-800 mb-4">Panel Teknisi: Update Pengerjaan</h4>
-                            <form action="{{ route('tickets.updateStatus', $ticket->id) }}" method="POST" enctype="multipart/form-data">
-                                @csrf
-
-                                <div class="mb-4">
-                                    <label class="block text-sm font-bold mb-1 text-green-900">Ubah Status Menjadi:</label>
-                                    <select name="status" class="border-gray-300 rounded shadow-sm w-full md:w-1/2" required>
-                                        @if($ticket->status == 'assigned')
-                                            <option value="on_progress">Mulai Dikerjakan (On Progress)</option>
-                                        @endif
-                                        <option value="resolved">Selesai Diperbaiki (Resolved)</option>
-                                    </select>
-                                </div>
-
-                                <div class="mb-4">
-                                    <label class="block text-sm font-bold mb-1 text-green-900">Catatan Perbaikan (Opsional):</label>
-                                    <textarea name="note" rows="2" class="border-gray-300 rounded shadow-sm w-full" placeholder="Misal: Kabel sudah disambung ulang dan dilakban..."></textarea>
-                                </div>
-
-                                <div class="mb-4">
-                                    <label class="block text-sm font-bold mb-1 text-green-900">Upload Foto Hasil Perbaikan (Opsional):</label>
-                                    <input type="file" name="image_after" class="border border-gray-300 bg-white rounded p-1 w-full md:w-1/2">
-                                </div>
-
-                                <button type="submit" class="bg-green-600 text-black font-bold py-2 px-4 rounded hover:bg-green-700">
-                                    Update Status
-                                </button>
-                            </form>
                         </div>
                     @endif
-                @endif
 
-                <!-- 6. PANEL KHUSUS ADMIN UNTUK MENUTUP / MENOLAK TIKET -->
-                @if(Auth::user()->role == 'admin' && $ticket->status == 'resolved')
-                    <div class="bg-purple-50 border border-purple-200 p-4 rounded mb-6">
-                        <h4 class="font-bold text-purple-800 mb-2">Verifikasi Admin: Evaluasi Pekerjaan</h4>
-                        <p class="text-sm text-purple-700 mb-4">Teknisi telah melaporkan perbaikan selesai. Silakan periksa foto dan catatan sebelum menutup tiket, atau kembalikan jika pekerjaan belum maksimal.</p>
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-xl border border-gray-100 p-6">
+                        <h4 class="text-sm font-bold text-gray-800 uppercase mb-4 flex items-center border-b pb-2">
+                            <svg class="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            Jejak Riwayat
+                        </h4>
 
-                        <!-- INI BAGIAN YANG DIUBAH: Menggunakan 'formaction' untuk 2 tombol berbeda -->
-                        <form method="POST">
-                            @csrf
-                            <div class="mb-4">
-                                <label class="block text-sm font-bold mb-1 text-purple-900">Catatan Verifikasi (Wajib diisi jika ditolak):</label>
-                                <textarea name="note" rows="2" class="border-gray-300 rounded shadow-sm w-full" placeholder="Misal: Pekerjaan rapi, ATAU Tolong perbaiki lagi, kabel belum dilakban."></textarea>
-                            </div>
-
-                            <div class="flex gap-4">
-                                <!-- Tombol Setuju (Menuju fungsi close) -->
-                                <button type="submit" formaction="{{ route('tickets.close', $ticket->id) }}" class="bg-purple-600 text-black font-bold py-2 px-4 rounded hover:bg-purple-700">
-                                    Verifikasi & Tutup Tiket
-                                </button>
-
-                                <!-- Tombol Tolak (Menuju fungsi reject) -->
-                                <button type="submit" formaction="{{ route('tickets.reject', $ticket->id) }}" class="bg-red-600 text-white font-bold py-2 px-4 rounded hover:bg-red-700">
-                                    Tolak & Kembalikan (Revisi)
-                                </button>
-                            </div>
-                        </form>
+                        <div class="relative border-l border-gray-200 ml-3 space-y-6">
+                            @foreach($histories as $history)
+                                <div class="mb-4 ml-6">
+                                    <span class="absolute flex items-center justify-center w-6 h-6 bg-blue-100 rounded-full -left-3 ring-8 ring-white">
+                                        <svg class="w-3 h-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                                    </span>
+                                    <h5 class="flex items-center mb-1 text-sm font-semibold text-gray-900">
+                                        {{ $history->user?->name ?? 'Sistem' }}
+                                        <span class="bg-gray-100 text-gray-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded ml-2">{{ strtoupper($history->status) }}</span>
+                                    </h5>
+                                    <time class="block mb-2 text-xs font-normal leading-none text-gray-400">{{ $history->created_at->format('d M Y, H:i') }}</time>
+                                    <p class="mb-4 text-sm font-normal text-gray-500 bg-gray-50 p-2 rounded border border-gray-100">{{ $history->note ?? 'Status diperbarui.' }}</p>
+                                </div>
+                            @endforeach
+                        </div>
                     </div>
-                @endif
 
-                <!-- TOMBOL KEMBALI -->
-                <div class="mt-4">
-                    <a href="{{ route('dashboard') }}" class="text-gray-500 hover:text-gray-800 underline">&laquo; Kembali ke Dashboard</a>
                 </div>
-
             </div>
+
         </div>
     </div>
 </x-app-layout>

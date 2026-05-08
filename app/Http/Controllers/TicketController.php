@@ -10,13 +10,14 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 
+
 class TicketController extends Controller
 {
     public function index(\Illuminate\Http\Request $request)
     {
         $role = Auth::user()->role;
 
-        // 👇 1. TAMBAHAN: Mengambil semua data kategori untuk ditampilkan di dropdown
+        // Mengambil semua data kategori untuk ditampilkan di dropdown
         $categories = Category::all();
 
         $query = \App\Models\Ticket::query();
@@ -27,29 +28,33 @@ class TicketController extends Controller
             $query->where('reporter_id', Auth::id());
         }
 
+        // Logika filter pencarian teks
         if ($request->filled('search')) {
-            $query->where(function($q) use ($request) {
+            $query->where(function ($q) use ($request) {
                 $q->where('title', 'like', '%' . $request->search . '%')
-                  ->orWhere('ticket_number', 'like', '%' . $request->search . '%')
-                  ->orWhere('location', 'like', '%' . $request->search . '%');
+                    ->orWhere('ticket_number', 'like', '%' . $request->search . '%')
+                    ->orWhere('location', 'like', '%' . $request->search . '%')
+                    ->orWhere('floor', 'like', '%' . $request->search . '%');
             });
         }
 
+        // Logika filter Bulan, Status, Kategori, dan Lantai
         if ($request->filled('month')) {
             $query->whereMonth('created_at', $request->month);
         }
-
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
-
-        // 👇 2. TAMBAHAN: Logika filter pencarian jika dropdown Kategori dipilih
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
+        }
+        if ($request->filled('floor')) {
+            $query->where('floor', $request->floor);
         }
 
         $tickets = $query->latest()->paginate(5)->withQueryString();
 
+        // Widget Statistik
         if ($role == 'admin') {
             $totalTickets = \App\Models\Ticket::count();
             $progressTickets = \App\Models\Ticket::whereIn('status', ['assigned', 'on_progress'])->count();
@@ -67,8 +72,32 @@ class TicketController extends Controller
             $closedTickets = \App\Models\Ticket::where('reporter_id', Auth::id())->where('status', 'closed')->count();
         }
 
-        // 👇 3. TAMBAHAN: Memasukkan variabel 'categories' ke dalam compact agar bisa dibaca oleh HTML
-        return view('dashboard', compact('tickets', 'totalTickets', 'progressTickets', 'resolvedTickets', 'closedTickets', 'categories'));
+        // 👇 TAMBAHAN DATA UNTUK GRAFIK (CHART) KATEGORI 👇
+        $semuaKategori = \App\Models\Category::all();
+        $chartLabels = [];
+        $chartData = [];
+
+        foreach($semuaKategori as $kategori) {
+            $chartLabels[] = $kategori->name; // Masukkan nama kategori
+            // Hitung berapa banyak tiket yang pakai kategori ini
+            $chartData[] = \App\Models\Ticket::where('category_id', $kategori->id)->count();
+        }
+        // 👆 AKHIR TAMBAHAN DATA GRAFIK 👆
+
+        // ... (Kodingan $chartLabels dan $chartData milikmu biarkan saja) ...
+
+        // 👇 TAMBAHAN DATA UNTUK GRAFIK STATUS (PIE/DOUGHNUT) 👇
+        $statusLabels = ['Open', 'On Progress', 'Resolved', 'Closed'];
+        $statusData = [
+            \App\Models\Ticket::where('status', 'open')->count(),
+            \App\Models\Ticket::where('status', 'on_progress')->count(),
+            \App\Models\Ticket::where('status', 'resolved')->count(),
+            \App\Models\Ticket::where('status', 'closed')->count(),
+        ];
+        // 👆 AKHIR TAMBAHAN DATA STATUS 👆
+
+        // Jangan lupa tambahkan 'chartLabels' dan 'chartData' ke dalam compact!
+        return view('dashboard', compact('tickets', 'totalTickets', 'progressTickets', 'resolvedTickets', 'closedTickets', 'categories', 'chartLabels', 'chartData', 'statusLabels', 'statusData'));
     }
 
     public function create()
@@ -82,6 +111,7 @@ class TicketController extends Controller
         $request->validate([
             'category_id' => 'required',
             'service_type' => 'required',
+            'floor' => 'required',
             'location' => 'required',
             'title' => 'required',
             'description' => 'required',
@@ -100,7 +130,8 @@ class TicketController extends Controller
             'ticket_number' => $ticketNumber,
             'reporter_id' => Auth::id(),
             'category_id' => $request->category_id,
-             'service_type' => $request->service_type,
+            'service_type' => $request->service_type,
+            'floor' => $request->floor,
             'location' => $request->location,
             'title' => $request->title,
             'description' => $request->description,
@@ -225,7 +256,9 @@ class TicketController extends Controller
     public function edit(Ticket $ticket)
     {
         abort_if(Auth::user()->role !== 'admin', 403, 'Akses Ditolak: Hanya Admin yang boleh mengedit tiket!');
-        return view('tickets.edit', compact('ticket'));
+
+        $categories = \App\Models\Category::all();
+        return view('tickets.edit', compact('ticket', 'categories'));
     }
 
     public function update(Request $request, Ticket $ticket)
@@ -233,12 +266,16 @@ class TicketController extends Controller
         abort_if(Auth::user()->role !== 'admin', 403, 'Akses Ditolak: Hanya Admin yang boleh mengedit tiket!');
 
         $request->validate([
+           'category_id' => 'required',
+            'service_type' => 'required',
             'title' => 'required|string|max:255',
             'location' => 'required|string|max:255',
             'description' => 'required|string',
         ]);
 
         $ticket->update([
+            'category_id' => $request->category_id,
+            'service_type' => $request->service_type,
             'title' => $request->title,
             'location' => $request->location,
             'description' => $request->description,
@@ -265,7 +302,7 @@ class TicketController extends Controller
     }
 
     // ==========================================
-    // FITUR EXPORT PDF & EXCEL (DIUBAH KE VERSI JAVASCRIPT)
+    // FITUR EXPORT PDF & EXCEL
     // ==========================================
     public function export(\Illuminate\Http\Request $request)
     {
@@ -279,11 +316,16 @@ class TicketController extends Controller
         }
 
         if ($request->filled('search')) {
-            $query->where(function($q) use ($request) {
+            $query->where(function ($q) use ($request) {
                 $q->where('title', 'like', '%' . $request->search . '%')
-                  ->orWhere('ticket_number', 'like', '%' . $request->search . '%')
-                  ->orWhere('location', 'like', '%' . $request->search . '%');
+                    ->orWhere('ticket_number', 'like', '%' . $request->search . '%')
+                    ->orWhere('location', 'like', '%' . $request->search . '%')
+                    ->orWhere('floor', 'like', '%' . $request->search . '%');
             });
+        }
+
+        if ($request->filled('floor')) {
+            $query->where('floor', $request->floor);
         }
         if ($request->filled('month')) {
             $query->whereMonth('created_at', $request->month);
@@ -291,8 +333,6 @@ class TicketController extends Controller
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
-
-        // 👇 4. TAMBAHAN: Logika filter Kategori untuk Export PDF & Excel
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
         }
@@ -300,7 +340,6 @@ class TicketController extends Controller
         $tickets = $query->latest()->get();
 
         if ($request->type == 'pdf') {
-            // Langsung memanggil tampilan Javascript tanpa membebani server
             return view('tickets.export-pdf', compact('tickets'));
         }
 
@@ -310,4 +349,8 @@ class TicketController extends Controller
 
         return back();
     }
+
+
+
+
 }
