@@ -122,70 +122,78 @@
                     </a>
                 </div>
 
-                <div class="p-4">
-                    <form method="GET" action="{{ route('dashboard') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+               <div class="p-4">
+    <form method="GET" action="{{ route('dashboard') }}" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
 
-                        <!-- Search Box -->
-                        <div>
-                            <label class="block text-xs font-bold text-[#0f2942] mb-1 uppercase tracking-wide">Search</label>
-                            <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari tiket..." class="w-full border-gray-300 rounded text-sm focus:ring-[#0f2942] focus:border-[#0f2942]">
-                        </div>
+        <div class="col-span-2 md:col-span-1"> <label class="block text-xs font-bold text-[#0f2942] mb-1 uppercase tracking-wide">Search</label>
+            <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari tiket..." class="w-full border-gray-300 rounded text-sm focus:ring-[#0f2942] focus:border-[#0f2942]">
+        </div>
 
-                        <!-- Dropdown Kategori -->
-                        <div>
-                            <label class="block text-xs font-bold text-[#0f2942] mb-1 uppercase tracking-wide">Category</label>
-                            <select name="category_id" class="w-full border-gray-300 rounded text-sm focus:ring-[#0f2942] focus:border-[#0f2942]" onchange="this.form.submit()">
-                                <option value="">Semua Kategori</option>
-                                @foreach($categories as $category)
-                                    <option value="{{ $category->id }}" {{ request('category_id') == $category->id ? 'selected' : '' }}>
-                                        {{ $category->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
+        <div>
+            <label class="block text-xs font-bold text-[#0f2942] mb-1 uppercase tracking-wide">Category</label>
+            <select name="category_id" class="w-full border-gray-300 rounded text-sm focus:ring-[#0f2942] focus:border-[#0f2942]" onchange="this.form.submit()">
+                <option value="">Semua Kategori</option>
+                @foreach($categories as $category)
+                    <option value="{{ $category->id }}" {{ request('category_id') == $category->id ? 'selected' : '' }}>
+                        {{ $category->name }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
 
-                        <!-- Dropdown Lantai (Basement - Lantai 8) -->
-                        <div>
-                            <label class="block text-xs font-bold text-[#0f2942] mb-1 uppercase tracking-wide">Floor</label>
-                            <select name="floor" class="w-full border-gray-300 rounded text-sm focus:ring-[#0f2942] focus:border-[#0f2942]" onchange="this.form.submit()">
-                                <option value="">Semua Lantai</option>
-                                <option value="Basement" {{ request('floor') == 'Basement' ? 'selected' : '' }}>Basement</option>
-                                @for($i=1; $i<=8; $i++)
-                                    <option value="Lantai {{ $i }}" {{ request('floor') == 'Lantai '.$i ? 'selected' : '' }}>Lantai {{ $i }}</option>
-                                @endfor
-                            </select>
-                        </div>
+        <div>
+            <label class="block text-xs font-bold text-[#0f2942] mb-1 uppercase tracking-wide">Floor</label>
+            <select name="floor" class="w-full border-gray-300 rounded text-sm focus:ring-[#0f2942] focus:border-[#0f2942]" onchange="this.form.submit()">
+                <option value="">Semua Lantai</option>
+                <option value="Basement" {{ request('floor') == 'Basement' ? 'selected' : '' }}>Basement</option>
+                @for($i=1; $i<=8; $i++)
+                    <option value="Lantai {{ $i }}" {{ request('floor') == 'Lantai '.$i ? 'selected' : '' }}>Lantai {{ $i }}</option>
+                @endfor
+            </select>
+        </div>
 
-                        <!-- Dropdown Bulan -->
-                        <div>
-                            <label class="block text-xs font-bold text-[#0f2942] mb-1 uppercase tracking-wide">Month</label>
-                            <select name="month" class="w-full border-gray-300 rounded text-sm focus:ring-[#0f2942] focus:border-[#0f2942]" onchange="this.form.submit()">
-                                <option value="">Semua Bulan</option>
-                                @for($m=1; $m<=12; ++$m)
-                                    <option value="{{ $m }}" {{ request('month') == $m ? 'selected' : '' }}>
-                                        {{ date('F', mktime(0, 0, 0, $m, 1)) }}
-                                    </option>
-                                @endfor
-                            </select>
-                        </div>
+        <div>
+            <label class="block text-xs font-bold text-[#0f2942] mb-1 uppercase tracking-wide">Year</label>
+            <select name="year" class="w-full border-gray-300 rounded text-sm focus:ring-[#0f2942] focus:border-[#0f2942]" onchange="this.form.submit()">
+                <option value="">Semua Tahun</option>
+                @php
+                    $startYear = 2024; // Tahun sistem ini pertama kali dibuat
+                    $currentYear = date('Y'); // Mengambil tahun saat ini secara otomatis
+                @endphp
+                @for($y = $startYear; $y <= $currentYear; $y++)
+                    <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>
+                        {{ $y }}
+                    </option>
+                @endfor
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-bold text-[#0f2942] mb-1 uppercase tracking-wide">Month</label>
+            <select name="month" class="w-full border-gray-300 rounded text-sm focus:ring-[#0f2942] focus:border-[#0f2942]" onchange="this.form.submit()">
+                <option value="">Semua Bulan</option>
+                @for($m=1; $m<=12; ++$m)
+                    <option value="{{ $m }}" {{ request('month') == $m ? 'selected' : '' }}>
+                        {{ date('F', mktime(0, 0, 0, $m, 1)) }}
+                    </option>
+                @endfor
+            </select>
+        </div>
 
-                        <!-- Dropdown Status -->
-                        <div>
-                            <label class="block text-xs font-bold text-[#0f2942] mb-1 uppercase tracking-wide">Status</label>
-                            <select name="status" class="w-full border-gray-300 rounded text-sm focus:ring-[#0f2942] focus:border-[#0f2942]" onchange="this.form.submit()">
-                                <option value="">Semua Status</option>
-                                <option value="open" {{ request('status') == 'open' ? 'selected' : '' }}>Open</option>
-                                <option value="assigned" {{ request('status') == 'assigned' ? 'selected' : '' }}>Assigned</option>
-                                <option value="on_progress" {{ request('status') == 'on_progress' ? 'selected' : '' }}>On Progress</option>
-                                <option value="resolved" {{ request('status') == 'resolved' ? 'selected' : '' }}>Resolved</option>
-                                <option value="closed" {{ request('status') == 'closed' ? 'selected' : '' }}>Closed</option>
-                            </select>
-                        </div>
+        <div>
+            <label class="block text-xs font-bold text-[#0f2942] mb-1 uppercase tracking-wide">Status</label>
+            <select name="status" class="w-full border-gray-300 rounded text-sm focus:ring-[#0f2942] focus:border-[#0f2942]" onchange="this.form.submit()">
+                <option value="">Semua Status</option>
+                <option value="open" {{ request('status') == 'open' ? 'selected' : '' }}>Open</option>
+                <option value="assigned" {{ request('status') == 'assigned' ? 'selected' : '' }}>Assigned</option>
+                <option value="on_progress" {{ request('status') == 'on_progress' ? 'selected' : '' }}>On Progress</option>
+                <option value="resolved" {{ request('status') == 'resolved' ? 'selected' : '' }}>Resolved</option>
+                <option value="closed" {{ request('status') == 'closed' ? 'selected' : '' }}>Closed</option>
+            </select>
+        </div>
 
-                        <button type="submit" class="hidden">Cari</button>
-                    </form>
-                </div>
-            </div>
+        <button type="submit" class="hidden">Cari</button>
+    </form>
+</div>
 
             <!-- TABEL DATA & TOMBOL EXPORT -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200">

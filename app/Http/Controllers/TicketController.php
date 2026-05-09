@@ -1,6 +1,8 @@
 <?php
 
 namespace App\Http\Controllers;
+use App\Notifications\TicketNotification;
+use Illuminate\Support\Facades\Notification;
 
 use Illuminate\Http\Request;
 use App\Models\Category;
@@ -39,6 +41,9 @@ class TicketController extends Controller
         }
 
         // Logika filter Bulan, Status, Kategori, dan Lantai
+        if ($request->filled('year')) {
+            $query->whereYear('created_at', $request->year);
+        }
         if ($request->filled('month')) {
             $query->whereMonth('created_at', $request->month);
         }
@@ -51,6 +56,7 @@ class TicketController extends Controller
         if ($request->filled('floor')) {
             $query->where('floor', $request->floor);
         }
+
 
         $tickets = $query->latest()->paginate(5)->withQueryString();
 
@@ -147,6 +153,13 @@ class TicketController extends Controller
             'note' => 'Tiket baru dibuat oleh Staff.',
         ]);
 
+// 👇 TRIGGER NOTIFIKASI KE ADMIN 👇
+        // Cari semua user yang jabatannya admin
+        $admins = User::where('role', 'admin')->get();
+
+        // Kirim notifikasi ke mereka
+        Notification::send($admins, new TicketNotification($ticket, 'Tiket Baru: ' . $ticket->title . ' dari ' . Auth::user()->name));
+        //
         return redirect()->route('dashboard')->with('success', 'Laporan kerusakan berhasil dikirim!');
     }
 
@@ -176,6 +189,12 @@ class TicketController extends Controller
             'status' => 'assigned',
             'note' => 'Admin menugaskan teknisi untuk perbaikan.',
         ]);
+
+        // Kirim Notifikasi ke Teknisi yang ditugaskan
+        $technician = User::find($request->technician_id);
+        if ($technician) {
+            Notification::send($technician, new TicketNotification($ticket, 'TUGAS BARU: ' . $ticket->title . ' menunggumu!'));
+        }
 
         return back()->with('success', 'Teknisi berhasil ditugaskan!');
     }
@@ -207,6 +226,14 @@ class TicketController extends Controller
             'note' => $request->note ?? 'Status tiket diperbarui menjadi ' . $request->status,
         ]);
 
+        // ... (kode update status kamu sebelumnya) ...
+
+        if ($request->status == 'resolved') {
+            // Beritahu Admin bahwa teknisi sudah selesai dan minta diverifikasi
+            $admins = User::where('role', 'admin')->get();
+            \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\TicketNotification($ticket, 'MENUNGGU VERIFIKASI: Teknisi telah menyelesaikan tiket ' . $ticket->ticket_number));
+        }
+
         return back()->with('success', 'Status pengerjaan berhasil diupdate!');
     }
 
@@ -227,6 +254,23 @@ class TicketController extends Controller
             'status' => 'closed',
             'note' => $request->note ?? 'Tiket telah diverifikasi dan ditutup oleh Admin.',
         ]);
+
+        // Kirim Notifikasi ke Admin & Staff pembuat tiket
+        $admins = User::where('role', 'admin')->get();
+        $reporter = User::find($ticket->reporter_id);
+
+        $pesan = 'Status tiket ' . $ticket->ticket_number . ' berubah menjadi ' . strtoupper($request->status);
+
+        Notification::send($admins, new TicketNotification($ticket, $pesan));
+        if ($reporter) {
+            Notification::send($reporter, new TicketNotification($ticket, 'SELESAI: Laporan ' . $ticket->ticket_number . ' telah ditutup. Terima kasih!'));
+        }
+
+        // Beritahu Teknisi bahwa pekerjaannya di-ACC bos
+        $technician = User::find($ticket->technician_id);
+        if ($technician) {
+            Notification::send($technician, new TicketNotification($ticket, 'DISETUJUI: Pekerjaanmu pada tiket ' . $ticket->ticket_number . ' telah di-ACC Admin.'));
+        }
 
         return back()->with('success', 'Tiket berhasil ditutup secara permanen!');
     }
@@ -249,6 +293,12 @@ class TicketController extends Controller
             'status' => 'on_progress',
             'note' => 'REVISI ADMIN: ' . $request->note,
         ]);
+
+        // Beritahu teknisi bahwa pekerjaannya ditolak dan butuh revisi
+        $technician = User::find($ticket->technician_id);
+        if ($technician) {
+            Notification::send($technician, new TicketNotification($ticket, 'REVISI: Laporan ' . $ticket->ticket_number . ' dikembalikan oleh Admin.'));
+        }
 
         return back()->with('success', 'Tiket dikembalikan ke Teknisi untuk diperbaiki ulang!');
     }
@@ -350,7 +400,20 @@ class TicketController extends Controller
         return back();
     }
 
+// Tambahkan tipe data "string" pada $id untuk menghilangkan peringatan pertama
+    public function readNotification(string $id)
+    {
+        // Trik ajaib untuk memberitahu VS Code bahwa ini adalah model User
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
 
+        // Gunakan $user->notifications(), BUKAN Auth::user()->notifications() untuk menghilangkan peringatan kedua
+        $notification = $user->notifications()->findOrFail($id);
+
+        $notification->markAsRead();
+
+        return redirect($notification->data['url']);
+    }
 
 
 }

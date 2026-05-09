@@ -4,16 +4,18 @@
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 {{ __('Detail Laporan: ') }} <span class="text-blue-600">{{ $ticket->ticket_number }}</span>
             </h2>
-            <a href="{{ route('dashboard') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg text-sm transition duration-150 flex items-center">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                Kembali
-            </a>
         </div>
     </x-slot>
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="flex flex-wrap justify-between items-center mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
 
+                <a href="{{ route('dashboard') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg text-sm transition duration-150 flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    Kembali ke Dashboard
+                </a>
+            </div>
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
                 <div class="lg:col-span-2 space-y-6">
@@ -153,8 +155,11 @@
                                     </form>
                                 @endif
 
-                                @if(Auth::user()->role == 'admin' && $ticket->status == 'resolved')
+                               @if(Auth::user()->role == 'admin' && $ticket->status == 'resolved')
                                     <p class="text-xs text-gray-600 mb-3">Teknisi telah menyelesaikan pekerjaan. Silakan lakukan verifikasi.</p>
+
+                                    <label class="block text-xs font-bold text-gray-700 mb-1">Catatan (Wajib diisi jika menolak):</label>
+                                    <textarea name="note" form="form-reject" rows="2" class="w-full text-xs border-gray-300 rounded-lg shadow-sm mb-3 focus:ring-red-500 focus:border-red-500" placeholder="Ketik alasan penolakan di sini..."></textarea>
                                     <div class="flex gap-2">
                                         <form action="{{ route('tickets.close', $ticket->id) }}" method="POST" class="w-1/2">
                                             @csrf
@@ -162,16 +167,15 @@
                                                 ✅ ACC & Tutup
                                             </button>
                                         </form>
-                                        <form action="{{ route('tickets.reject', $ticket->id) }}" method="POST" class="w-1/2">
+
+                                        <form id="form-reject" action="{{ route('tickets.reject', $ticket->id) }}" method="POST" class="w-1/2">
                                             @csrf
-                                            <input type="hidden" name="note" value="Ditolak oleh Admin, hasil belum sesuai standar.">
                                             <button type="submit" onclick="return confirm('Tolak pekerjaan ini dan kembalikan ke teknisi?')" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-2 rounded-lg shadow transition text-xs text-center">
                                                 ❌ Tolak (Revisi)
                                             </button>
                                         </form>
                                     </div>
                                 @endif
-
                             </div>
                         </div>
                     @endif

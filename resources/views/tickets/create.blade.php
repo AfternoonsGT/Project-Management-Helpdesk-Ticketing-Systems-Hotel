@@ -75,16 +75,16 @@
 
                                 <div class="mb-5">
                                     <label class="block text-sm font-bold text-gray-700 mb-1">Judul Singkat <span class="text-red-500">*</span></label>
-                                    <input type="text" name="title" required placeholder="Contoh: AC Bocor Menetes" class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-red-500 focus:border-red-500 bg-white">
+                                    <input type="text" name="title" required placeholder="Contoh: AC Bocor " class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-red-500 focus:border-red-500 bg-white">
                                 </div>
 
                                 <div class="mb-5">
                                     <label class="block text-sm font-bold text-gray-700 mb-1">Tingkat Prioritas <span class="text-red-500">*</span></label>
                                     <select name="priority" required class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-red-500 focus:border-red-500 bg-white">
-                                        <option value="">-- Pilih Tingkat Keparahan --</option>
-                                        <option value="low">🟢 Rendah </option>
-                                        <option value="medium">🟡 Sedang </option>
-                                        <option value="high">🔴 Tinggi </option>
+                                        <option value="">-- Pilih Tingkat Prioritas --</option>
+                                        <option value="low">🟢 Low </option>
+                                        <option value="medium">🟡 Medium </option>
+                                        <option value="high">🔴 High </option>
                                     </select>
                                 </div>
 

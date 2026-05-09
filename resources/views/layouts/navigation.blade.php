@@ -21,10 +21,59 @@
             </div>
 
             <!-- Settings Dropdown -->
-            <div class="hidden sm:flex sm:items-center sm:ms-6">
+<div class="hidden sm:flex sm:items-center sm:ms-6">
+
+                <!-- 👇 1. DROPDOWN NOTIFIKASI LONCENG 👇 -->
+                <x-dropdown align="right" width="64"> <!-- Lebar 64 agar teks pesan muat -->
+                    <x-slot name="trigger">
+                        <!-- Tombol Lonceng -->
+                        <button class="relative p-2 mr-4 text-gray-400 hover:text-white focus:outline-none transition duration-150 ease-in-out">
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                            </svg>
+
+                            <!-- Angka Merah (Badge) -->
+                            @if(Auth::user()->unreadNotifications->count() > 0)
+                                <span class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/4 -translate-y-1/4 bg-red-600 rounded-full">
+                                    {{ Auth::user()->unreadNotifications->count() }}
+                                </span>
+                            @endif
+                        </button>
+                    </x-slot>
+
+                    <x-slot name="content">
+                        <!-- Paksa ukuran lebar 320px dan background putih -->
+                        <div style="width: 320px;" class="bg-white rounded-md shadow-lg overflow-hidden">
+                            <!-- Header Dropdown -->
+                            <div class="px-4 py-3 font-bold text-xs text-white bg-[#0f2942] uppercase tracking-wide">
+                                🔔 Notifikasi Baru
+                            </div>
+
+                            <!-- Area Daftar Pesan -->
+                            <div class="max-h-80 overflow-y-auto bg-white">
+                                @forelse(Auth::user()->unreadNotifications as $notification)
+                                    <a href="{{ route('notifications.read', $notification->id) }}" class="block px-4 py-3 border-b border-gray-100 hover:bg-blue-50 transition duration-150">
+                                        <p class="text-sm text-gray-800 font-semibold mb-1">{{ $notification->data['message'] }}</p>
+                                        <p class="text-xs text-gray-500 flex items-center">
+                                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                            {{ $notification->created_at->diffForHumans() }}
+                                        </p>
+                                    </a>
+                                @empty
+                                    <div class="px-4 py-6 text-sm text-center text-gray-500 flex flex-col items-center">
+                                        <svg class="w-8 h-8 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+                                        Tidak ada notifikasi baru
+                                    </div>
+                                @endforelse
+                            </div>
+                        </div>
+                    </x-slot>
+                </x-dropdown>
+                <!-- 👆 AKHIR DROPDOWN NOTIFIKASI 👆 -->
+
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
-                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition ease-in-out duration-150">
+                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-300 hover:text-white bg-transparent focus:outline-none transition ease-in-out duration-150">
                             <div>{{ Auth::user()->name }}</div>
 
                             <div class="ms-1">
@@ -40,10 +89,8 @@
                             {{ __('Profile') }}
                         </x-dropdown-link>
 
-                        <!-- Authentication -->
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
-
                             <x-dropdown-link :href="route('logout')"
                                     onclick="event.preventDefault();
                                                 this.closest('form').submit();">
@@ -53,7 +100,6 @@
                     </x-slot>
                 </x-dropdown>
             </div>
-
             <!-- Hamburger -->
             <div class="-me-2 flex items-center sm:hidden">
                 <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-900 focus:outline-none focus:bg-gray-100 dark:focus:bg-gray-900 focus:text-gray-500 dark:focus:text-gray-400 transition duration-150 ease-in-out">
