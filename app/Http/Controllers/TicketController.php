@@ -193,7 +193,7 @@ class TicketController extends Controller
         // Kirim Notifikasi ke Teknisi yang ditugaskan
         $technician = User::find($request->technician_id);
         if ($technician) {
-            Notification::send($technician, new TicketNotification($ticket, 'TUGAS BARU: ' . $ticket->title . ' menunggumu!'));
+            $technician->notify(new TicketNotification($ticket, 'TUGAS BARU: ' . $ticket->title . ' menunggumu!'));
         }
 
         return back()->with('success', 'Teknisi berhasil ditugaskan!');
@@ -226,16 +226,31 @@ class TicketController extends Controller
             'note' => $request->note ?? 'Status tiket diperbarui menjadi ' . $request->status,
         ]);
 
-        // ... (kode update status kamu sebelumnya) ...
+        // 👇 TRIGGER NOTIFIKASI 👇
+        $admins = User::where('role', 'admin')->get();
+        $reporter = User::find($ticket->reporter_id);
 
         if ($request->status == 'resolved') {
-            // Beritahu Admin bahwa teknisi sudah selesai dan minta diverifikasi
-            $admins = User::where('role', 'admin')->get();
-            \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\TicketNotification($ticket, 'MENUNGGU VERIFIKASI: Teknisi telah menyelesaikan tiket ' . $ticket->ticket_number));
+            // A. Jika teknisi selesai mengerjakan
+            Notification::send($admins, new \App\Notifications\TicketNotification($ticket, 'MENUNGGU VERIFIKASI: Teknisi telah menyelesaikan tiket ' . $ticket->ticket_number));
+
+            if ($reporter) {
+                $reporter->notify(new \App\Notifications\TicketNotification($ticket, 'INFO: Tiketmu (' . $ticket->ticket_number . ') telah selesai diperbaiki. Menunggu ACC Admin.'));
+            }
+        } else {
+            // B. Jika teknisi baru mengubah status (misal: On Progress)
+            // Di sini kita kembalikan teks "berubah menjadi" yang sempat hilang!
+            $pesan = 'UPDATE: Status tiket ' . $ticket->ticket_number . ' kini menjadi ' . strtoupper($request->status);
+
+            Notification::send($admins, new \App\Notifications\TicketNotification($ticket, $pesan));
+
+            if ($reporter) {
+                $reporter->notify(new \App\Notifications\TicketNotification($ticket, $pesan));
+            }
         }
 
         return back()->with('success', 'Status pengerjaan berhasil diupdate!');
-    }
+    }   
 
     public function close(Request $request, Ticket $ticket)
     {
@@ -255,21 +270,21 @@ class TicketController extends Controller
             'note' => $request->note ?? 'Tiket telah diverifikasi dan ditutup oleh Admin.',
         ]);
 
-        // Kirim Notifikasi ke Admin & Staff pembuat tiket
-        $admins = User::where('role', 'admin')->get();
+        // Kirim Notifikasi ke teknisi & Staff pembuat tiket
+
         $reporter = User::find($ticket->reporter_id);
 
-        $pesan = 'Status tiket ' . $ticket->ticket_number . ' berubah menjadi ' . strtoupper($request->status);
 
-        Notification::send($admins, new TicketNotification($ticket, $pesan));
+    // 1. Beritahu Staff pembuat tiket
+        $reporter = User::find($ticket->reporter_id);
         if ($reporter) {
-            Notification::send($reporter, new TicketNotification($ticket, 'SELESAI: Laporan ' . $ticket->ticket_number . ' telah ditutup. Terima kasih!'));
+            $reporter->notify(new TicketNotification($ticket, 'SELESAI: Laporan ' . $ticket->ticket_number . ' telah ditutup. Terima kasih!'));
         }
 
-        // Beritahu Teknisi bahwa pekerjaannya di-ACC bos
+        // 2. Beritahu Teknisi bahwa pekerjaannya di-ACC bos
         $technician = User::find($ticket->technician_id);
         if ($technician) {
-            Notification::send($technician, new TicketNotification($ticket, 'DISETUJUI: Pekerjaanmu pada tiket ' . $ticket->ticket_number . ' telah di-ACC Admin.'));
+            $technician->notify(new TicketNotification($ticket, 'DISETUJUI: Pekerjaanmu pada tiket ' . $ticket->ticket_number . ' telah di-ACC Admin.'));
         }
 
         return back()->with('success', 'Tiket berhasil ditutup secara permanen!');
@@ -297,7 +312,7 @@ class TicketController extends Controller
         // Beritahu teknisi bahwa pekerjaannya ditolak dan butuh revisi
         $technician = User::find($ticket->technician_id);
         if ($technician) {
-            Notification::send($technician, new TicketNotification($ticket, 'REVISI: Laporan ' . $ticket->ticket_number . ' dikembalikan oleh Admin.'));
+            $technician->notify(new TicketNotification($ticket, 'REVISI: Laporan ' . $ticket->ticket_number . ' dikembalikan oleh Admin.'));
         }
 
         return back()->with('success', 'Tiket dikembalikan ke Teknisi untuk diperbaiki ulang!');
