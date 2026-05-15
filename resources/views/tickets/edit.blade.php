@@ -45,8 +45,8 @@
                                     <label class="block text-sm font-bold text-gray-700 mb-1">Jenis Layanan <span class="text-red-500">*</span></label>
                                     <select name="service_type" required class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white">
                                         <option value="">-- Pilih Jenis Layanan --</option>
-                                        <option value="perbaikan" {{ $ticket->service_type == 'perbaikan' ? 'selected' : '' }}>🔧 Perbaikan (Rusak/Error)</option>
-                                        <option value="perawatan" {{ $ticket->service_type == 'perawatan' ? 'selected' : '' }}>🧹 Perawatan Rutin (Maintenance)</option>
+                                        <option value="perbaikan" {{ $ticket->service_type == 'perbaikan' ? 'selected' : '' }}> Perbaikan (Rusak/Error)</option>
+                                        <option value="perawatan" {{ $ticket->service_type == 'perawatan' ? 'selected' : '' }}> Perawatan Rutin (Maintenance)</option>
                                     </select>
                                 </div>
 

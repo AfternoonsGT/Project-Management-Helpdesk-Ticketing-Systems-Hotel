@@ -11,8 +11,8 @@
             <!-- WIDGET STATISTIK -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
-                    <h3 class="text-gray-500 text-sm font-bold uppercase">Total Laporan</h3>
-                    <p class="text-2xl font-bold text-gray-800">{{ $totalTickets }}</p>
+                    <h3 class="text-gray-500 text-sm font-bold uppercase">Laporan Baru</h3>
+                    <p class="text-2xl font-bold text-gray-800">{{ $openTickets }}</p>
                 </div>
                 <div class="bg-white p-4 rounded-lg shadow border-l-4 border-yellow-500">
                     <h3 class="text-gray-500 text-sm font-bold uppercase">Sedang Dikerjakan</h3>
@@ -111,89 +111,117 @@
 
 
 
-            <!-- KOTAK ADDITIONAL FILTERS (Tanpa Emotikon) -->
+           <!-- KOTAK ADDITIONAL FILTERS -->
             <div class="bg-white border border-gray-200 rounded-lg shadow-sm mb-6">
                 <div class="px-4 py-3 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-lg">
                     <h3 class="text-sm font-bold text-[#0f2942] uppercase tracking-wider">
                         Additional Filters
                     </h3>
-                    <a href="{{ route('dashboard') }}" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-xs font-bold transition">
+                    <a href="{{ route('dashboard') }}" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-xs font-bold transition shadow-sm">
                         Clear
                     </a>
                 </div>
 
-               <div class="p-4">
-    <form method="GET" action="{{ route('dashboard') }}" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div class="p-4">
+                    <!-- Grid diubah menjadi 4 kolom agar pas dan presisi untuk 8 item (7 input + 1 tombol) -->
+                    <!-- Ditambahkan 'items-end' agar tombol sejajar rata bawah dengan input -->
+                    <form method="GET" action="{{ route('dashboard') }}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
 
-        <div class="col-span-2 md:col-span-1"> <label class="block text-xs font-bold text-[#0f2942] mb-1 uppercase tracking-wide">Search</label>
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari tiket..." class="w-full border-gray-300 rounded text-sm focus:ring-[#0f2942] focus:border-[#0f2942]">
-        </div>
+                        <!-- 1. Search -->
+                        <div>
+                            <label class="block text-xs font-bold text-[#0f2942] mb-1 uppercase tracking-wide">pencarian</label>
+                            <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari tiket..." class="w-full border-gray-300 rounded text-sm focus:ring-[#0f2942] focus:border-[#0f2942]">
+                        </div>
 
-        <div>
-            <label class="block text-xs font-bold text-[#0f2942] mb-1 uppercase tracking-wide">Category</label>
-            <select name="category_id" class="w-full border-gray-300 rounded text-sm focus:ring-[#0f2942] focus:border-[#0f2942]" onchange="this.form.submit()">
-                <option value="">Semua Kategori</option>
-                @foreach($categories as $category)
-                    <option value="{{ $category->id }}" {{ request('category_id') == $category->id ? 'selected' : '' }}>
-                        {{ $category->name }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
+                        <!-- 2. Category -->
+                        <div>
+                            <label class="block text-xs font-bold text-[#0f2942] mb-1 uppercase tracking-wide">Kategori</label>
+                            <select name="category_id" class="w-full border-gray-300 rounded text-sm focus:ring-[#0f2942] focus:border-[#0f2942]">
+                                <option value="">Semua Kategori</option>
+                                @foreach($categories as $category)
+                                    <option value="{{ $category->id }}" {{ request('category_id') == $category->id ? 'selected' : '' }}>
+                                        {{ $category->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
 
-        <div>
-            <label class="block text-xs font-bold text-[#0f2942] mb-1 uppercase tracking-wide">Floor</label>
-            <select name="floor" class="w-full border-gray-300 rounded text-sm focus:ring-[#0f2942] focus:border-[#0f2942]" onchange="this.form.submit()">
-                <option value="">Semua Lantai</option>
-                <option value="Basement" {{ request('floor') == 'Basement' ? 'selected' : '' }}>Basement</option>
-                @for($i=1; $i<=8; $i++)
-                    <option value="Lantai {{ $i }}" {{ request('floor') == 'Lantai '.$i ? 'selected' : '' }}>Lantai {{ $i }}</option>
-                @endfor
-            </select>
-        </div>
+                        <!-- 3. Jenis Layanan (BARU) -->
+                        <div>
+                            <label class="block text-xs font-bold text-[#0f2942] mb-1 uppercase tracking-wide">Jenis Layanan</label>
+                            <select name="service_type" class="w-full border-gray-300 rounded text-sm focus:ring-[#0f2942] focus:border-[#0f2942]">
+                                <option value="">Semua Layanan</option>
+                                <option value="perbaikan" {{ request('service_type') == 'perbaikan' ? 'selected' : '' }}>Perbaikan</option>
+                                <option value="rutin" {{ request('service_type') == 'rutin' ? 'selected' : '' }}>Rutin</option>
+                            </select>
+                        </div>
 
-        <div>
-            <label class="block text-xs font-bold text-[#0f2942] mb-1 uppercase tracking-wide">Year</label>
-            <select name="year" class="w-full border-gray-300 rounded text-sm focus:ring-[#0f2942] focus:border-[#0f2942]" onchange="this.form.submit()">
-                <option value="">Semua Tahun</option>
-                @php
-                    $startYear = 2024; // Tahun sistem ini pertama kali dibuat
-                    $currentYear = date('Y'); // Mengambil tahun saat ini secara otomatis
-                @endphp
-                @for($y = $startYear; $y <= $currentYear; $y++)
-                    <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>
-                        {{ $y }}
-                    </option>
-                @endfor
-            </select>
-        </div>
-        <div>
-            <label class="block text-xs font-bold text-[#0f2942] mb-1 uppercase tracking-wide">Month</label>
-            <select name="month" class="w-full border-gray-300 rounded text-sm focus:ring-[#0f2942] focus:border-[#0f2942]" onchange="this.form.submit()">
-                <option value="">Semua Bulan</option>
-                @for($m=1; $m<=12; ++$m)
-                    <option value="{{ $m }}" {{ request('month') == $m ? 'selected' : '' }}>
-                        {{ date('F', mktime(0, 0, 0, $m, 1)) }}
-                    </option>
-                @endfor
-            </select>
-        </div>
+                        <!-- 4. Floor -->
+                        <div>
+                            <label class="block text-xs font-bold text-[#0f2942] mb-1 uppercase tracking-wide">Lantai</label>
+                            <select name="floor" class="w-full border-gray-300 rounded text-sm focus:ring-[#0f2942] focus:border-[#0f2942]">
+                                <option value="">Semua Lantai</option>
+                                <option value="Basement" {{ request('floor') == 'Basement' ? 'selected' : '' }}>Basement</option>
+                                @for($i=1; $i<=8; $i++)
+                                    <option value="Lantai {{ $i }}" {{ request('floor') == 'Lantai '.$i ? 'selected' : '' }}>Lantai {{ $i }}</option>
+                                @endfor
+                            </select>
+                        </div>
 
-        <div>
-            <label class="block text-xs font-bold text-[#0f2942] mb-1 uppercase tracking-wide">Status</label>
-            <select name="status" class="w-full border-gray-300 rounded text-sm focus:ring-[#0f2942] focus:border-[#0f2942]" onchange="this.form.submit()">
-                <option value="">Semua Status</option>
-                <option value="open" {{ request('status') == 'open' ? 'selected' : '' }}>Open</option>
-                <option value="assigned" {{ request('status') == 'assigned' ? 'selected' : '' }}>Assigned</option>
-                <option value="on_progress" {{ request('status') == 'on_progress' ? 'selected' : '' }}>On Progress</option>
-                <option value="resolved" {{ request('status') == 'resolved' ? 'selected' : '' }}>Resolved</option>
-                <option value="closed" {{ request('status') == 'closed' ? 'selected' : '' }}>Closed</option>
-            </select>
-        </div>
+                        <!-- 5. Year -->
+                        <div>
+                            <label class="block text-xs font-bold text-[#0f2942] mb-1 uppercase tracking-wide">Tahun</label>
+                            <select name="year" class="w-full border-gray-300 rounded text-sm focus:ring-[#0f2942] focus:border-[#0f2942]">
+                                <option value="">Semua Tahun</option>
+                                @php
+                                    $startYear = 2024; // Tahun sistem ini pertama kali dibuat
+                                    $currentYear = date('Y'); // Mengambil tahun saat ini secara otomatis
+                                @endphp
+                                @for($y = $startYear; $y <= $currentYear; $y++)
+                                    <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>
+                                        {{ $y }}
+                                    </option>
+                                @endfor
+                            </select>
+                        </div>
 
-        <button type="submit" class="hidden">Cari</button>
-    </form>
-</div>
+                        <!-- 6. Month -->
+                        <div>
+                            <label class="block text-xs font-bold text-[#0f2942] mb-1 uppercase tracking-wide">Bulan</label>
+                            <select name="month" class="w-full border-gray-300 rounded text-sm focus:ring-[#0f2942] focus:border-[#0f2942]">
+                                <option value="">Semua Bulan</option>
+                                @for($m=1; $m<=12; ++$m)
+                                    <option value="{{ $m }}" {{ request('month') == $m ? 'selected' : '' }}>
+                                        {{ date('F', mktime(0, 0, 0, $m, 1)) }}
+                                    </option>
+                                @endfor
+                            </select>
+                        </div>
+
+                        <!-- 7. Status -->
+                        <div>
+                            <label class="block text-xs font-bold text-[#0f2942] mb-1 uppercase tracking-wide">Status</label>
+                            <select name="status" class="w-full border-gray-300 rounded text-sm focus:ring-[#0f2942] focus:border-[#0f2942]">
+                                <option value="">Semua Status</option>
+                                <option value="open" {{ request('status') == 'open' ? 'selected' : '' }}>Open</option>
+                                <option value="assigned" {{ request('status') == 'assigned' ? 'selected' : '' }}>Assigned</option>
+                                <option value="on_progress" {{ request('status') == 'on_progress' ? 'selected' : '' }}>On Progress</option>
+                                <option value="resolved" {{ request('status') == 'resolved' ? 'selected' : '' }}>Resolved</option>
+                                <option value="closed" {{ request('status') == 'closed' ? 'selected' : '' }}>Closed</option>
+                            </select>
+                        </div>
+
+                        <!-- 8. Tombol Submit (Dimunculkan dan Dipercantik) -->
+                        <div>
+                            <button type="submit" class="w-full h-[42px] bg-[#0f2942] hover:bg-[#1a4066] text-white rounded text-sm font-bold transition shadow-md flex items-center justify-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                Terapkan Filter
+                            </button>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
 
             <!-- TABEL DATA & TOMBOL EXPORT -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200">
@@ -207,17 +235,35 @@
                         <input type="hidden" name="month" value="{{ request('month') }}">
                         <input type="hidden" name="status" value="{{ request('status') }}">
 
-                        <!-- Tombol Excel (Hijau) -->
-                        <button type="submit" name="type" value="excel" class="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded text-xs font-bold transition shadow-sm">
-                            Excel
+
+                    </form>
+
+
+                </div>
+
+               <div class="bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 overflow-hidden">
+
+                <div class="px-6 py-4 bg-gray-50/50 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4">
+
+                    <form method="GET" action="{{ route('tickets.export') }}" class="flex gap-2">
+                        <input type="hidden" name="search" value="{{ request('search') }}">
+                        <input type="hidden" name="category_id" value="{{ request('category_id') }}">
+                        <input type="hidden" name="floor" value="{{ request('floor') }}">
+                        <input type="hidden" name="month" value="{{ request('month') }}">
+                        <input type="hidden" name="status" value="{{ request('status') }}">
+
+                        <button type="submit" name="type" value="excel" class="flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200 px-4 py-2 rounded-lg text-sm font-semibold transition-all">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            Export Excel
                         </button>
-                        <!-- Tombol PDF (Merah) -->
-                        <button type="submit" name="type" value="pdf" class="bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded text-xs font-bold transition shadow-sm">
-                            PDF
+
+                        <button type="submit" name="type" value="pdf" class="flex items-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-4 py-2 rounded-lg text-sm font-semibold transition-all">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                            Export PDF
                         </button>
                     </form>
 
-                    <!-- Tombol Buat Laporan -->
+                   <!-- Tombol Buat Laporan -->
                     @if(Auth::user()->role == 'staff' || Auth::user()->role == 'admin')
                         <a href="{{ route('tickets.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-bold shadow-md transition">
                             + Buat Laporan
@@ -225,79 +271,105 @@
                     @endif
                 </div>
 
-                <!-- Tabel Data -->
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <!-- HEADER WARNA NAVY BLUE -->
-                        <thead class="bg-[#0f2942] text-white text-xs uppercase tracking-wider font-semibold">
+               <div class="bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 overflow-hidden">
+
+                <div class="px-5 py-4 bg-gray-50/50 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4">
+
+                    <form method="GET" action="{{ route('tickets.export') }}" class="flex gap-2">
+                        <input type="hidden" name="search" value="{{ request('search') }}">
+                        <input type="hidden" name="category_id" value="{{ request('category_id') }}">
+                        <input type="hidden" name="floor" value="{{ request('floor') }}">
+                        <input type="hidden" name="month" value="{{ request('month') }}">
+                        <input type="hidden" name="status" value="{{ request('status') }}">
+
+
+                    </form>
+
+
+                </div>
+
+                <div class="overflow-x-auto w-full">
+                    <table class="w-full text-left table-auto">
+                        <thead class="bg-gradient-to-r from-[#0f2942] to-[#1e405e] text-white text-xs uppercase tracking-wider font-semibold">
                             <tr>
-                                <th class="p-4 border-r border-[#1a3a5a]">No. Tiket</th>
-                                <th class="p-4 border-r border-[#1a3a5a]">Tanggal</th>
-                                <th class="p-4 border-r border-[#1a3a5a]">Kategori</th>
-                                <th class="p-4 border-r border-[#1a3a5a]">Jenis Layanan</th>
-                                <th class="p-4 border-r border-[#1a3a5a]">Masalah</th>
-                                <th class="p-4 border-r border-[#1a3a5a]">Lokasi</th>
-                                <th class="p-4 border-r border-[#1a3a5a] text-center">Status</th>
-                                <th class="p-4 text-center">Aksi</th>
+                                <th class="px-4 py-3 rounded-tl-lg w-[10%] whitespace-nowrap">No. Tiket</th>
+                                <th class="px-4 py-3 w-[12%] whitespace-nowrap">Tanggal</th>
+                                <th class="px-4 py-3 w-[12%]">Kategori</th>
+                                <th class="px-4 py-3 w-[12%]">Layanan</th>
+                                <th class="px-4 py-3 w-[24%]">Masalah</th>
+                                <th class="px-4 py-3 w-[12%]">Lokasi</th>
+                                <th class="px-4 py-3 text-center w-[10%] whitespace-nowrap">Status</th>
+                                <th class="px-4 py-3 text-center rounded-tr-lg w-[8%] whitespace-nowrap">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody class="text-sm text-gray-700">
+                        <tbody class="text-sm text-gray-600 divide-y divide-gray-50">
                             @forelse($tickets as $ticket)
-                                <tr class="border-b border-gray-100 hover:bg-blue-50 transition duration-150">
-                                    <td class="p-4 text-[#0f2942] font-semibold">{{ $ticket->ticket_number }}</td>
-                                    <td class="p-4 text-gray-500">{{ $ticket->created_at->format('d M Y') }}</td>
-
-                                    <td class="p-4 font-medium text-blue-700">{{ $ticket->category ? $ticket->category->name : '-' }}</td>
-
-                                    <td class="p-4">
+                                <tr class="hover:bg-blue-50/50 transition-colors group">
+                                    <td class="px-4 py-3 whitespace-nowrap">
+                                        <span class="font-bold text-[#0f2942] bg-blue-50 px-2 py-1 rounded-md border border-blue-100">{{ $ticket->ticket_number }}</span>
+                                    </td>
+                                    <td class="px-4 py-3 font-medium text-gray-500 whitespace-nowrap">
+                                        {{ $ticket->created_at->format('d M Y') }}
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="inline-block px-2 py-1 rounded-md text-[11px] font-semibold bg-gray-100 text-gray-700 break-words">
+                                            {{ $ticket->category ? $ticket->category->name : '-' }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3">
                                         @if($ticket->service_type == 'perbaikan')
-                                            <span class="text-red-600 font-semibold">Perbaikan</span>
+                                            <span class="text-rose-600 font-bold flex items-center gap-1 text-xs"><span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>Perbaikan</span>
                                         @elseif($ticket->service_type == 'rutin')
-                                            <span class="text-blue-600 font-semibold">Rutin</span>
+                                            <span class="text-blue-600 font-bold flex items-center gap-1 text-xs"><span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>Rutin</span>
                                         @else
-                                            -
+                                            <span class="text-gray-400 text-xs">-</span>
                                         @endif
                                     </td>
-
-                                    <td class="p-4 font-medium text-gray-800">{{ $ticket->title }}</td>
-
-                                    <!-- 👇 Kolom Lokasi dengan Kamar & Lantai 👇 -->
-                                    <td class="p-4">
-                                        <div class="font-bold text-gray-800">{{ $ticket->location }}</div>
-                                        <div class="text-xs text-gray-500 mt-1 font-medium">{{ $ticket->floor ?? 'Lantai -' }}</div>
+                                    <td class="px-4 py-3">
+                                        <p class="font-semibold text-gray-800 line-clamp-2" title="{{ $ticket->title }}">{{ $ticket->title }}</p>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="font-bold text-gray-800 break-words">{{ $ticket->location }}</div>
+                                        <div class="text-[11px] text-gray-400 font-medium mt-0.5 flex items-center gap-1 whitespace-nowrap">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                                            {{ $ticket->floor ?? 'Lantai -' }}
+                                        </div>
                                     </td>
 
-                                    <!-- 👇 BADGE STATUS DENGAN WARNA BARU 👇 -->
-                                    <td class="p-4 text-center">
-                                        <span class="px-3 py-1 rounded text-xs font-bold text-white shadow-sm inline-block min-w-[90px]
-                                            {{ $ticket->status == 'open' ? 'bg-blue-500' : '' }}
-                                            {{ $ticket->status == 'assigned' ? 'bg-purple-500' : '' }}
-                                            {{ $ticket->status == 'on_progress' ? 'bg-yellow-500' : '' }}
-                                            {{ $ticket->status == 'resolved' ? 'bg-green-500' : '' }}
-                                            {{ $ticket->status == 'closed' ? 'bg-gray-600' : '' }}
-                                        ">
+                                    <td class="px-4 py-3 text-center whitespace-nowrap">
+                                        @php
+                                            $statusColors = [
+                                                'open' => 'bg-blue-100 text-blue-700 border-blue-200',
+                                                'assigned' => 'bg-purple-100 text-purple-700 border-purple-200',
+                                                'on_progress' => 'bg-amber-100 text-amber-700 border-amber-200',
+                                                'resolved' => 'bg-emerald-100 text-emerald-700 border-emerald-200',
+                                                'closed' => 'bg-gray-100 text-gray-600 border-gray-200'
+                                            ];
+                                            $dotColors = [
+                                                'open' => 'bg-blue-500', 'assigned' => 'bg-purple-500',
+                                                'on_progress' => 'bg-amber-500', 'resolved' => 'bg-emerald-500', 'closed' => 'bg-gray-400'
+                                            ];
+                                        @endphp
+                                        <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] sm:text-xs font-bold border {{ $statusColors[$ticket->status] ?? 'bg-gray-100' }}">
+                                            <span class="w-1.5 h-1.5 rounded-full {{ $dotColors[$ticket->status] ?? 'bg-gray-400' }}"></span>
                                             {{ strtoupper(str_replace('_', ' ', $ticket->status)) }}
                                         </span>
                                     </td>
 
-                                    <!-- TOMBOL AKSI -->
-                                    <td class="p-4 text-center">
-                                        <div class="flex justify-center space-x-2">
-                                            <!-- Detail -->
-                                            <a href="{{ route('tickets.show', $ticket->id) }}" class="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 p-1.5 rounded transition" title="Detail">
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center justify-center space-x-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
+                                            <a href="{{ route('tickets.show', $ticket->id) }}" class="p-1.5 rounded-md text-blue-600 hover:bg-blue-600 hover:text-white transition-colors" title="Lihat Detail">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                                             </a>
 
-                                            <!-- Admin Actions -->
                                             @if(Auth::user()->role == 'admin')
-                                                <a href="{{ route('tickets.edit', $ticket->id) }}" class="text-yellow-600 hover:text-yellow-800 bg-yellow-50 hover:bg-yellow-100 p-1.5 rounded transition" title="Edit">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                                <a href="{{ route('tickets.edit', $ticket->id) }}" class="p-1.5 rounded-md text-amber-500 hover:bg-amber-500 hover:text-white transition-colors" title="Edit">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                                                 </a>
-
-                                                <form action="{{ route('tickets.destroy', $ticket->id) }}" method="POST" onsubmit="return confirm('Hapus permanen?');" class="inline">
+                                                <form action="{{ route('tickets.destroy', $ticket->id) }}" method="POST" onsubmit="return confirm('Hapus tiket ini permanen?');" class="inline">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 p-1.5 rounded transition" title="Hapus">
+                                                    <button type="submit" class="p-1.5 rounded-md text-rose-500 hover:bg-rose-500 hover:text-white transition-colors" title="Hapus">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                                     </button>
                                                 </form>
@@ -307,17 +379,27 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="p-8 text-center text-gray-500 font-medium">Tidak ada data tiket ditemukan.</td>
+                                    <td colspan="8" class="px-6 py-12 text-center">
+                                        <div class="flex flex-col items-center justify-center">
+                                            <svg class="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                                            <p class="text-gray-500 font-medium">Belum ada tiket yang dilaporkan.</p>
+                                        </div>
+                                    </td>
                                 </tr>
                             @endforelse
                         </tbody>
                     </table>
+                </div>
 
-                    <!-- Pagination -->
-                    <div class="px-6 py-4 bg-white border-t border-gray-100">
+                @if($tickets->hasPages())
+                    <div class="px-6 py-4 bg-gray-50/50 border-t border-gray-100">
                         {{ $tickets->links() }}
                     </div>
-                </div>
+                @endif
+
+
+
+
             </div>
 
         </div>

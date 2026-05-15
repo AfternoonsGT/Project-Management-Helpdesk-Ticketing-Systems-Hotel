@@ -1,9 +1,9 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use App\Notifications\TicketNotification;
 use Illuminate\Support\Facades\Notification;
-
 use Illuminate\Http\Request;
 use App\Models\Category;
 use App\Models\Ticket;
@@ -12,16 +12,12 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 
-
 class TicketController extends Controller
 {
     public function index(\Illuminate\Http\Request $request)
     {
         $role = Auth::user()->role;
-
-        // Mengambil semua data kategori untuk ditampilkan di dropdown
         $categories = Category::all();
-
         $query = \App\Models\Ticket::query();
 
         if ($role == 'technician') {
@@ -40,7 +36,7 @@ class TicketController extends Controller
             });
         }
 
-        // Logika filter Bulan, Status, Kategori, dan Lantai
+        // Logika filter LENGKAP
         if ($request->filled('year')) {
             $query->whereYear('created_at', $request->year);
         }
@@ -56,7 +52,10 @@ class TicketController extends Controller
         if ($request->filled('floor')) {
             $query->where('floor', $request->floor);
         }
-
+        // TAMBAHAN: Filter Jenis Layanan
+        if ($request->filled('service_type')) {
+            $query->where('service_type', $request->service_type);
+        }
 
         $tickets = $query->latest()->paginate(5)->withQueryString();
 
@@ -66,33 +65,31 @@ class TicketController extends Controller
             $progressTickets = \App\Models\Ticket::whereIn('status', ['assigned', 'on_progress'])->count();
             $resolvedTickets = \App\Models\Ticket::where('status', 'resolved')->count();
             $closedTickets = \App\Models\Ticket::where('status', 'closed')->count();
+            $openTickets = \App\Models\Ticket::where('status', 'open')->count();
         } elseif ($role == 'technician') {
             $totalTickets = \App\Models\Ticket::where('technician_id', Auth::id())->count();
             $progressTickets = \App\Models\Ticket::where('technician_id', Auth::id())->whereIn('status', ['assigned', 'on_progress'])->count();
             $resolvedTickets = \App\Models\Ticket::where('technician_id', Auth::id())->where('status', 'resolved')->count();
             $closedTickets = \App\Models\Ticket::where('technician_id', Auth::id())->where('status', 'closed')->count();
+            $openTickets = \App\Models\Ticket::where('technician_id', Auth::id())->where('status', 'open')->count();
         } else {
             $totalTickets = \App\Models\Ticket::where('reporter_id', Auth::id())->count();
             $progressTickets = \App\Models\Ticket::where('reporter_id', Auth::id())->whereIn('status', ['assigned', 'on_progress'])->count();
             $resolvedTickets = \App\Models\Ticket::where('reporter_id', Auth::id())->where('status', 'resolved')->count();
             $closedTickets = \App\Models\Ticket::where('reporter_id', Auth::id())->where('status', 'closed')->count();
+            $openTickets = \App\Models\Ticket::where('reporter_id', Auth::id())->where('status', 'open')->count();
         }
 
-        // 👇 TAMBAHAN DATA UNTUK GRAFIK (CHART) KATEGORI 👇
+        // Data Grafik Kategori
         $semuaKategori = \App\Models\Category::all();
         $chartLabels = [];
         $chartData = [];
-
         foreach($semuaKategori as $kategori) {
-            $chartLabels[] = $kategori->name; // Masukkan nama kategori
-            // Hitung berapa banyak tiket yang pakai kategori ini
+            $chartLabels[] = $kategori->name;
             $chartData[] = \App\Models\Ticket::where('category_id', $kategori->id)->count();
         }
-        // 👆 AKHIR TAMBAHAN DATA GRAFIK 👆
 
-        // ... (Kodingan $chartLabels dan $chartData milikmu biarkan saja) ...
-
-        // 👇 TAMBAHAN DATA UNTUK GRAFIK STATUS (PIE/DOUGHNUT) 👇
+        // Data Grafik Status
         $statusLabels = ['Open', 'On Progress', 'Resolved', 'Closed'];
         $statusData = [
             \App\Models\Ticket::where('status', 'open')->count(),
@@ -100,10 +97,8 @@ class TicketController extends Controller
             \App\Models\Ticket::where('status', 'resolved')->count(),
             \App\Models\Ticket::where('status', 'closed')->count(),
         ];
-        // 👆 AKHIR TAMBAHAN DATA STATUS 👆
 
-        // Jangan lupa tambahkan 'chartLabels' dan 'chartData' ke dalam compact!
-        return view('dashboard', compact('tickets', 'totalTickets', 'progressTickets', 'resolvedTickets', 'closedTickets', 'categories', 'chartLabels', 'chartData', 'statusLabels', 'statusData'));
+        return view('dashboard', compact('tickets', 'openTickets', 'progressTickets', 'resolvedTickets', 'closedTickets', 'categories', 'chartLabels', 'chartData', 'statusLabels', 'statusData'));
     }
 
     public function create()
@@ -153,13 +148,9 @@ class TicketController extends Controller
             'note' => 'Tiket baru dibuat oleh Staff.',
         ]);
 
-// 👇 TRIGGER NOTIFIKASI KE ADMIN 👇
-        // Cari semua user yang jabatannya admin
         $admins = User::where('role', 'admin')->get();
-
-        // Kirim notifikasi ke mereka
         Notification::send($admins, new TicketNotification($ticket, 'Tiket Baru: ' . $ticket->title . ' dari ' . Auth::user()->name));
-        //
+
         return redirect()->route('dashboard')->with('success', 'Laporan kerusakan berhasil dikirim!');
     }
 
@@ -190,7 +181,6 @@ class TicketController extends Controller
             'note' => 'Admin menugaskan teknisi untuk perbaikan.',
         ]);
 
-        // Kirim Notifikasi ke Teknisi yang ditugaskan
         $technician = User::find($request->technician_id);
         if ($technician) {
             $technician->notify(new TicketNotification($ticket, 'TUGAS BARU: ' . $ticket->title . ' menunggumu!'));
@@ -201,7 +191,7 @@ class TicketController extends Controller
 
     public function updateStatus(Request $request, Ticket $ticket)
     {
-        abort_if(Auth::user()->role !== 'technician' || Auth::id() !== $ticket->technician_id, 403, 'Akses Ditolak: Anda bukan teknisi yang ditugaskan untuk pekerjaan ini!');
+        abort_if(Auth::user()->role !== 'technician' || Auth::id() !== $ticket->technician_id, 403, 'Akses Ditolak!');
 
         $request->validate([
             'status' => 'required',
@@ -214,10 +204,22 @@ class TicketController extends Controller
             $imagePath = $request->file('image_after')->store('tickets/after', 'public');
         }
 
-        $ticket->update([
+        // Siapkan data untuk diupdate
+        $updateData = [
             'status' => $request->status,
             'image_after' => $imagePath,
-        ]);
+        ];
+
+        // 👇 LOGIKA COMPLETED AT 👇
+        if ($request->status == 'resolved') {
+            if (is_null($ticket->completed_at)) {
+                $updateData['completed_at'] = now(); // Catat waktu selesai
+            }
+        } else {
+            $updateData['completed_at'] = null; // Reset jika teknisi mengubah status kembali ke on_progress
+        }
+
+        $ticket->update($updateData);
 
         TicketHistory::create([
             'ticket_id' => $ticket->id,
@@ -226,31 +228,24 @@ class TicketController extends Controller
             'note' => $request->note ?? 'Status tiket diperbarui menjadi ' . $request->status,
         ]);
 
-        // 👇 TRIGGER NOTIFIKASI 👇
         $admins = User::where('role', 'admin')->get();
         $reporter = User::find($ticket->reporter_id);
 
         if ($request->status == 'resolved') {
-            // A. Jika teknisi selesai mengerjakan
             Notification::send($admins, new \App\Notifications\TicketNotification($ticket, 'MENUNGGU VERIFIKASI: Teknisi telah menyelesaikan tiket ' . $ticket->ticket_number));
-
             if ($reporter) {
                 $reporter->notify(new \App\Notifications\TicketNotification($ticket, 'INFO: Tiketmu (' . $ticket->ticket_number . ') telah selesai diperbaiki. Menunggu ACC Admin.'));
             }
         } else {
-            // B. Jika teknisi baru mengubah status (misal: On Progress)
-            // Di sini kita kembalikan teks "berubah menjadi" yang sempat hilang!
             $pesan = 'UPDATE: Status tiket ' . $ticket->ticket_number . ' kini menjadi ' . strtoupper($request->status);
-
             Notification::send($admins, new \App\Notifications\TicketNotification($ticket, $pesan));
-
             if ($reporter) {
                 $reporter->notify(new \App\Notifications\TicketNotification($ticket, $pesan));
             }
         }
 
         return back()->with('success', 'Status pengerjaan berhasil diupdate!');
-    }   
+    }
 
     public function close(Request $request, Ticket $ticket)
     {
@@ -259,9 +254,15 @@ class TicketController extends Controller
             'note' => 'nullable|string'
         ]);
 
-        $ticket->update([
-            'status' => 'closed'
-        ]);
+        // Siapkan data
+        $updateData = ['status' => 'closed'];
+
+        // Jika tiket ditutup langsung tanpa lewat status resolved, kita tetap butuh waktu selesainya
+        if (is_null($ticket->completed_at)) {
+            $updateData['completed_at'] = now();
+        }
+
+        $ticket->update($updateData);
 
         TicketHistory::create([
             'ticket_id' => $ticket->id,
@@ -270,18 +271,11 @@ class TicketController extends Controller
             'note' => $request->note ?? 'Tiket telah diverifikasi dan ditutup oleh Admin.',
         ]);
 
-        // Kirim Notifikasi ke teknisi & Staff pembuat tiket
-
-        $reporter = User::find($ticket->reporter_id);
-
-
-    // 1. Beritahu Staff pembuat tiket
         $reporter = User::find($ticket->reporter_id);
         if ($reporter) {
             $reporter->notify(new TicketNotification($ticket, 'SELESAI: Laporan ' . $ticket->ticket_number . ' telah ditutup. Terima kasih!'));
         }
 
-        // 2. Beritahu Teknisi bahwa pekerjaannya di-ACC bos
         $technician = User::find($ticket->technician_id);
         if ($technician) {
             $technician->notify(new TicketNotification($ticket, 'DISETUJUI: Pekerjaanmu pada tiket ' . $ticket->ticket_number . ' telah di-ACC Admin.'));
@@ -298,8 +292,10 @@ class TicketController extends Controller
             'note' => 'required|string'
         ]);
 
+        // 👇 LOGIKA RESET COMPLETED_AT 👇
         $ticket->update([
-            'status' => 'on_progress'
+            'status' => 'on_progress',
+            'completed_at' => null // Hapus waktu selesai karena dikembalikan ke teknisi!
         ]);
 
         TicketHistory::create([
@@ -309,7 +305,6 @@ class TicketController extends Controller
             'note' => 'REVISI ADMIN: ' . $request->note,
         ]);
 
-        // Beritahu teknisi bahwa pekerjaannya ditolak dan butuh revisi
         $technician = User::find($ticket->technician_id);
         if ($technician) {
             $technician->notify(new TicketNotification($ticket, 'REVISI: Laporan ' . $ticket->ticket_number . ' dikembalikan oleh Admin.'));
@@ -321,7 +316,6 @@ class TicketController extends Controller
     public function edit(Ticket $ticket)
     {
         abort_if(Auth::user()->role !== 'admin', 403, 'Akses Ditolak: Hanya Admin yang boleh mengedit tiket!');
-
         $categories = \App\Models\Category::all();
         return view('tickets.edit', compact('ticket', 'categories'));
     }
@@ -329,7 +323,6 @@ class TicketController extends Controller
     public function update(Request $request, Ticket $ticket)
     {
         abort_if(Auth::user()->role !== 'admin', 403, 'Akses Ditolak: Hanya Admin yang boleh mengedit tiket!');
-
         $request->validate([
            'category_id' => 'required',
             'service_type' => 'required',
@@ -389,8 +382,9 @@ class TicketController extends Controller
             });
         }
 
-        if ($request->filled('floor')) {
-            $query->where('floor', $request->floor);
+        // LENGKAPI LOGIKA FILTER UNTUK EXPORT JUGA
+        if ($request->filled('year')) {
+            $query->whereYear('created_at', $request->year);
         }
         if ($request->filled('month')) {
             $query->whereMonth('created_at', $request->month);
@@ -400,6 +394,13 @@ class TicketController extends Controller
         }
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
+        }
+        if ($request->filled('floor')) {
+            $query->where('floor', $request->floor);
+        }
+        // TAMBAHAN: Filter Jenis Layanan untuk Ekspor
+        if ($request->filled('service_type')) {
+            $query->where('service_type', $request->service_type);
         }
 
         $tickets = $query->latest()->get();
@@ -415,20 +416,12 @@ class TicketController extends Controller
         return back();
     }
 
-// Tambahkan tipe data "string" pada $id untuk menghilangkan peringatan pertama
     public function readNotification(string $id)
     {
-        // Trik ajaib untuk memberitahu VS Code bahwa ini adalah model User
         /** @var \App\Models\User $user */
         $user = Auth::user();
-
-        // Gunakan $user->notifications(), BUKAN Auth::user()->notifications() untuk menghilangkan peringatan kedua
         $notification = $user->notifications()->findOrFail($id);
-
         $notification->markAsRead();
-
         return redirect($notification->data['url']);
     }
-
-
 }

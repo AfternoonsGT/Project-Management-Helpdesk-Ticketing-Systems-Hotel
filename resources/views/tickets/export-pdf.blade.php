@@ -9,12 +9,12 @@
         body {
             margin: 0;
             padding: 0;
-            font-family: sans-serif;
-            font-size: 11px;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 10px;
+            color: #333;
             background-color: #fff;
         }
 
-        /* 👇 LAYAR PUTIH PENUTUP (OVERLAY) 👇 */
         #loading-overlay {
             position: fixed;
             top: 0;
@@ -26,145 +26,194 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
             color: #4b5563;
         }
 
-        /* Area laporan di posisi normal (tidak dilempar ke -9999px lagi) */
         #area-laporan {
             padding: 20px;
             width: 100%;
-            max-width: 100%;
-            background-color: white;
             box-sizing: border-box;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 5px;
+            font-size: 18px;
+            color: #0f2942;
+        }
+
+        .subtitle {
+            text-align: center;
+            margin-top: 0;
+            color: #666;
+            font-size: 10px;
+            margin-bottom: 20px;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 15px;
             table-layout: fixed;
         }
 
         th,
         td {
-            border: 1px solid #000;
-            padding: 6px;
-            text-align: left;
+            border: 1px solid #111;
+            padding: 6px 4px;
             word-wrap: break-word;
             word-break: break-word;
-            overflow-wrap: anywhere;
-            vertical-align: top;
+            vertical-align: middle;
+        }
+
+        th {
+            background-color: #0f2942;
+            color: #ffffff;
+            font-weight: bold;
+            text-align: center;
+            font-size: 10px;
+            text-transform: uppercase;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f9fafb;
         }
 
         tbody tr {
             page-break-inside: avoid;
         }
 
-        th {
-            background-color: #f2f2f2;
+        .text-center {
+            text-align: center;
         }
 
-        h2 {
-            text-align: center;
-            margin-bottom: 5px;
+        .text-bold {
+            font-weight: bold;
+        }
+
+        .text-small {
+            font-size: 8px;
+            color: #666;
+        }
+
+        .desc-box {
+            display: block;
+            margin-top: 3px;
+            padding-top: 3px;
+            border-top: 1px dashed #ccc;
+            font-size: 9px;
+            color: #444;
         }
     </style>
 </head>
 
 <body>
 
-    <!-- Layar loading yang menutupi tabel -->
-    <div id="loading-overlay">⏳ Sedang memproses dokumen PDF... Mohon tunggu...</div>
+    <div id="loading-overlay">⏳ Sedang merapikan & memproses dokumen PDF...</div>
 
-    <!-- Tabel dibiarkan di posisi kiri atas (Normal) -->
     <div id="area-laporan">
-        <h2>Laporan Kerusakan Fasilitas Hotel</h2>
-        <p>Dicetak pada: {{ \Carbon\Carbon::now()->format('d M Y, H:i') }}</p>
+        <h2>LAPORAN KERUSAKAN FASILITAS HOTEL PANGERAN</h2>
+        <p class="subtitle">Dicetak pada: {{ \Carbon\Carbon::now()->timezone('Asia/Jakarta')->format('d F Y, H:i') }} WIB
+        </p>
 
         <table>
             <thead>
                 <tr>
-                    <th style="width: 4%;">No</th>
-                    <th style="width: 14%;">No. Tiket</th>
-                    <th style="width: 10%;">Tgl Lapor</th>
-                    <th style="width: 10%;">Kategori</th>
-                    <th style="width: 16%;">Judul / Masalah</th>
-                    <th style="width: 12%;">Jenis Layanan</th>
+                    <th style="width: 3%;">No</th>
+                    <th style="width: 11%;">No. Tiket</th>
+                    <th style="width: 8%;">Pelapor</th>
+                    <th style="width: 8%;">Tgl Lapor</th>
+
                     <th style="width: 10%;">Lokasi</th>
-                    <th style="width: 8%;">Status</th>
-                    <th style="width: 13%;">Pelapor</th>
-                    <th style="width: 13%;">Teknisi</th>
+                    <th style="width: 9%;">Kategori</th>
+                    <th style="width: 9%;">Layanan</th>
+                    <th style="width: 20%;">Masalah & Deskripsi</th>
+
+                    <th style="width: 8%;">Teknisi</th>
+                    <th style="width: 8%;">Tgl Selesai</th>
+                    <th style="width: 6%;">Status</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach ($tickets as $index => $ticket)
                     <tr>
-                        <td>{{ $index + 1 }}</td>
-                        <td>{{ $ticket->ticket_number }}</td>
-                        <td>{{ $ticket->created_at->format('d M Y') }}</td>
-                        <!-- CARA YANG BENAR -->
-                        <td>{{ $ticket->category ? $ticket->category->name : 'Tidak Ada Kategori' }}</td>
-                        <td>{{ $ticket->title }}</td>
+                        <td class="text-center">{{ $index + 1 }}</td>
 
-                        <!-- Penerjemah Jenis Layanan -->
+                        <td class="text-bold text-center">{{ $ticket->ticket_number }}</td>
+                        <td class="text-center">{{ $ticket->reporter ? $ticket->reporter->name : '-' }}</td>
+                        <!-- Tanggal Lapor -->
+                        <td class="text-center">
+                            {{ $ticket->created_at->format('d M Y') }}<br>
+                            <span class="text-small">{{ $ticket->created_at->format('H:i') }}</span>
+                        </td>
+
+
+
+                        <!-- Lokasi -->
                         <td>
-                            @if ($ticket->service_type == 'perbaikan')
-                                🚨 Perbaikan
-                            @elseif($ticket->service_type == 'rutin')
-                                🔧 Servis Rutin
+                            <span class="text-bold">{{ $ticket->floor ?? 'Lantai -' }}</span><br>
+                            <span style="font-size: 9px;">{{ $ticket->location }}</span>
+                        </td>
+
+                        <td class="text-center">{{ $ticket->category ? $ticket->category->name : '-' }}</td>
+
+                        <td class="text-center">
+                            {{ ucfirst($ticket->service_type) }}
+                        </td>
+
+                        <!-- Masalah & Deskripsi -->
+                        <td>
+                            <strong style="font-size: 11px;">{{ $ticket->title }}</strong>
+                            <span class="desc-box">{{ $ticket->description ?? 'Tidak ada detail deskripsi.' }}</span>
+                        </td>
+
+
+                        <td class="text-center">{{ $ticket->technician ? $ticket->technician->name : '-' }}</td>
+                        <!-- Tanggal Selesai (Menggunakan completed_at yang baru) -->
+                        <td class="text-center text-bold">
+                            @if ($ticket->completed_at)
+                                {{ \Carbon\Carbon::parse($ticket->completed_at)->format('d M Y') }}<br>
+                                <span
+                                    class="text-small">{{ \Carbon\Carbon::parse($ticket->completed_at)->format('H:i') }}</span>
                             @else
                                 -
                             @endif
                         </td>
-
-                        <!-- 👇 GABUNGAN LANTAI DAN LOKASI UNTUK PDF 👇 -->
-                        <td>
-                            <b>{{ $ticket->floor }}</b><br>
-                            {{ $ticket->location }}
-                        </td>
-                        <td>{{ strtoupper($ticket->status) }}</td>
-                        <td>{{ $ticket->reporter ? $ticket->reporter->name : '-' }}</td>
-                        <td>{{ $ticket->technician ? $ticket->technician->name : 'Belum Ditugaskan' }}</td>
+                        <td class="text-center text-bold">{{ strtoupper($ticket->status) }}</td>
                     </tr>
                 @endforeach
             </tbody>
         </table>
     </div>
 
-    <!-- Script Pengeksekusi -->
+    <!-- Script Eksekusi -->
     <script>
         window.onload = function() {
             var element = document.getElementById('area-laporan');
-
             var opt = {
-                margin: 0.3,
-                filename: 'Laporan_Tiket_Hotel.pdf',
+                margin: 0.2,
+                filename: 'Laporan_Helpdesk_Hotel_Pangeran.pdf',
                 image: {
                     type: 'jpeg',
                     quality: 1
                 },
-                // Kamera tidak akan geser karena elemen di posisi normal!
                 html2canvas: {
-                    scale: 2
+                    scale: 2,
+                    useCORS: true
                 },
                 jsPDF: {
                     unit: 'in',
                     format: 'a4',
                     orientation: 'landscape'
-                },
-                pagebreak: {
-                    mode: ['css', 'legacy']
                 }
             };
 
             html2pdf().set(opt).from(element).save().then(function() {
-                window.history.back(); // Otomatis kembali setelah download selesai
+                window.history.back();
             });
         };
     </script>
-
 </body>
 
 </html>

@@ -29,15 +29,15 @@
                                 <td class="p-3">
                                     @if($user->role == 'admin')
                                         <span class="bg-gray-800 text-white px-3 py-1 rounded text-xs font-bold uppercase tracking-wider">
-                                            👑 Admin Utama
+                                             Admin Utama
                                         </span>
                                     @else
                                         <form action="{{ route('users.updateRole', $user->id) }}" method="POST" class="flex gap-2">
                                             @csrf
                                             @method('PUT')
                                             <select name="role" class="border-gray-300 rounded-md text-sm shadow-sm py-1" onchange="this.form.submit()">
-                                                <option value="technician" {{ $user->role == 'technician' ? 'selected' : '' }}>🔧 Teknisi</option>
-                                                <option value="staff" {{ $user->role == 'staff' ? 'selected' : '' }}>👤 Staff</option>
+                                                <option value="technician" {{ $user->role == 'technician' ? 'selected' : '' }}> Teknisi</option>
+                                                <option value="staff" {{ $user->role == 'staff' ? 'selected' : '' }}> Staff</option>
                                             </select>
                                         </form>
                                     @endif

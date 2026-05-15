@@ -3,7 +3,7 @@
     <!-- Logo / Judul Aplikasi -->
     <div class="h-16 flex items-center justify-center border-b border-gray-800 bg-gray-950">
         <h1 class="text-xl font-extrabold text-white tracking-widest uppercase">
-            <span class="text-blue-500">Hotel</span> Helpdesk
+            <span class="flex items-center justify-center text-red-500">Hotel Pangeran</span> Helpdesk
         </h1>
     </div>
 
